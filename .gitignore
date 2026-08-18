@@ -1,0 +1,26 @@
+# Credenciales: nunca al repositorio.
+# Las variables reales viven en un .env local que no se versiona; lo que sí
+# se versiona es el .env.example, que documenta qué variables hacen falta
+# sin exponer ningún valor.
+.env
+*.env
+!.env.example
+
+# Entorno virtual
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Archivos subidos por los usuarios (imágenes de jugadores y personajes):
+# son datos, no código, y además pesan.
+backend/static/uploads/
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
