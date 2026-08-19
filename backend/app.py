@@ -3,6 +3,7 @@ from flask import Flask
 from config import Config
 from controllers.jugador_routes import jugador_bp
 from controllers.peleador_routes import peleador_bp
+from controllers.torneo_routes import torneo_bp
 
 
 def create_app():
@@ -16,6 +17,7 @@ def create_app():
 
     app.register_blueprint(jugador_bp)
     app.register_blueprint(peleador_bp)
+    app.register_blueprint(torneo_bp)
 
     return app
 
