@@ -2,6 +2,7 @@ from flask import Flask
 
 from config import Config
 from controllers.jugador_routes import jugador_bp
+from controllers.peleador_routes import peleador_bp
 
 
 def create_app():
@@ -14,6 +15,7 @@ def create_app():
     app.config.from_object(Config)
 
     app.register_blueprint(jugador_bp)
+    app.register_blueprint(peleador_bp)
 
     return app
 
