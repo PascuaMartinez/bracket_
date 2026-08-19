@@ -44,6 +44,26 @@ qué tan parejos son los enfrentamientos entre dos jugadores.
 - **Frontend** — Flask + Jinja2, servido como aplicación aparte que consume la
   API del backend.
 
+## Cómo correrlo
+
+Requiere Python 3 y MySQL.
+
+```bash
+./init.sh
+```
+
+El script crea el entorno virtual, instala las dependencias, arma el
+archivo de configuración a partir del `.env.example` y ofrece crear la
+base con el esquema. Se puede correr las veces que haga falta: no pisa
+un `.env` que ya exista ni toca la base sin confirmación.
+
+Después, completar `backend/.env` con los datos de la base y levantar:
+
+```bash
+source venv/bin/activate
+cd backend && python app.py
+```
+
 ## Estado
 
 En desarrollo. Este README se actualiza a medida que el proyecto avanza.
