@@ -62,7 +62,7 @@ CREATE TABLE partido (
     id INT AUTO_INCREMENT PRIMARY KEY,
     torneo_id INT NOT NULL,
     jugador1_id INT NOT NULL,
-    jugador2_id INT NOT NULL,
+    jugador2_id INT NULL,
     -- NULL mientras no se jugó. El ganador es una referencia y no un
     -- booleano tipo "ganó el jugador 1" para que la consulta de "cuántos
     -- ganó tal jugador" sea directa, sin importar de qué lado estuvo.
@@ -90,6 +90,13 @@ CREATE TABLE partido (
     -- número significaría cosas distintas en cada torneo. El nombre de la
     -- ronda se deduce después, mirando cuántos partidos tiene.
     ronda INT NULL,
+
+    -- Un partido sin rival: el jugador pasa de ronda sin jugar, porque la
+    -- cantidad de participantes no completaba el cuadro. Se guarda como
+    -- partido y no como una lista aparte para que el avance del cuadro
+    -- tenga una sola forma de averiguar quién pasó: mirar los partidos de
+    -- la ronda. Por eso jugador2_id admite NULL.
+    es_pase_libre BOOLEAN NOT NULL DEFAULT FALSE,
 
     estado ENUM('pendiente', 'en_curso', 'finalizado', 'pospuesto') DEFAULT 'pendiente',
     fecha_jugado DATETIME NULL,

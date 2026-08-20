@@ -14,8 +14,8 @@ def crear_muchos(partidos, con_ronda=False):
     columnas = "torneo_id, jugador1_id, jugador2_id, orden, jornada"
     valores = "%(torneo_id)s, %(jugador1_id)s, %(jugador2_id)s, %(orden)s, %(jornada)s"
     if con_ronda:
-        columnas += ", ronda"
-        valores += ", %(ronda)s"
+        columnas += ", ronda, es_pase_libre, ganador_id, estado"
+        valores += ", %(ronda)s, %(es_pase_libre)s, %(ganador_id)s, %(estado)s"
     conn = get_connection()
     cursor = conn.cursor()
     cursor.executemany(

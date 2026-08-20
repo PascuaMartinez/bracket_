@@ -120,10 +120,12 @@ def _generar_eliminacion(torneo_id, jugadores_ids):
     partidos = []
     orden = 1
     for jugador1, jugador2 in cruces:
-        # Los cruces contra un lugar vacío no son partidos: ese jugador
-        # pasa de ronda sin jugar y aparece directamente en la siguiente.
-        if jugador2 is None:
-            continue
+        # Los pases libres se guardan como partido igual, marcados y ya
+        # finalizados. Podrían no guardarse -- no se juegan -- pero
+        # entonces habría que llevar en otro lado la lista de quiénes
+        # pasaron, y el avance del cuadro tendría dos fuentes de verdad.
+        # Así tiene una sola: los partidos de la ronda.
+        es_pase_libre = jugador2 is None
         partidos.append({
             "torneo_id": torneo_id,
             "jugador1_id": jugador1,
@@ -131,22 +133,17 @@ def _generar_eliminacion(torneo_id, jugadores_ids):
             "orden": orden,
             "jornada": None,
             "ronda": 1,
+            "es_pase_libre": es_pase_libre,
+            # El que pasa libre es su propio ganador: no hay nada que
+            # cargar y la ronda no debería quedar esperándolo.
+            "ganador_id": jugador1 if es_pase_libre else None,
+            "estado": "finalizado" if es_pase_libre else "pendiente",
         })
         orden += 1
 
     partido_repository.crear_muchos(partidos, con_ronda=True)
     torneo_repository.cambiar_estado(torneo_id, "en_curso")
-
-    # Los que pasaron sin jugar quedan esperando: se suman a la ronda 2
-    # cuando se genere, junto con los ganadores de la ronda 1.
-    _clasificados_sin_jugar[torneo_id] = [j1 for j1, j2 in cruces if j2 is None]
-    return len(partidos)
-
-
-# Los jugadores que pasaron de ronda sin jugar. Se guardan en memoria y no
-# en la base porque son un detalle del armado inicial, no un dato del
-# torneo: apenas se genera la ronda 2 dejan de existir como concepto.
-_clasificados_sin_jugar = {}
+    return sum(1 for p in partidos if not p["es_pase_libre"])
 
 
 def _avanzar_bracket(torneo_id, ronda):
@@ -155,11 +152,11 @@ def _avanzar_bracket(torneo_id, ronda):
     if any(p.estado != "finalizado" for p in partidos_ronda):
         return  # todavía falta jugar alguno
 
+    # Los pases libres ya están entre estos partidos, con su ganador
+    # cargado: no hay que buscarlos aparte. Y como vienen ordenados por
+    # el orden del cuadro, los mejor sembrados quedan adelante y mantienen
+    # la ventaja de su siembra.
     ganadores = [p.ganador_id for p in partidos_ronda]
-    # En la primera ronda se suman los que pasaron sin jugar. Van adelante
-    # para que mantengan la ventaja de su siembra.
-    if ronda == 1:
-        ganadores = _clasificados_sin_jugar.pop(torneo_id, []) + ganadores
 
     if len(ganadores) <= 1:
         return  # ya hay campeón, no hay ronda siguiente
@@ -175,5 +172,8 @@ def _avanzar_bracket(torneo_id, ronda):
             "orden": orden,
             "jornada": None,
             "ronda": ronda + 1,
+            "es_pase_libre": False,
+            "ganador_id": None,
+            "estado": "pendiente",
         })
     partido_repository.crear_muchos(partidos, con_ronda=True)
