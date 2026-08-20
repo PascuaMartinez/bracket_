@@ -30,13 +30,15 @@ echo "    Instaladas."
 # qué variables hacen falta. Así, cuando el proyecto necesite una nueva,
 # alcanza con agregarla al .example y este script la trae sola.
 echo "==> Archivos de configuración"
-if [ -f "backend/.env" ]; then
-    echo "    backend/.env ya existe, no se toca."
-else
-    cp backend/.env.example backend/.env
-    echo "    backend/.env creado desde el .env.example."
-    echo "    Completá ahí los datos de tu base antes de arrancar."
-fi
+for carpeta in backend frontend; do
+    if [ -f "$carpeta/.env" ]; then
+        echo "    $carpeta/.env ya existe, no se toca."
+    else
+        cp "$carpeta/.env.example" "$carpeta/.env"
+        echo "    $carpeta/.env creado desde el .env.example."
+    fi
+done
+echo "    Completá backend/.env con los datos de tu base antes de arrancar."
 
 echo ""
 read -p "==> ¿Crear la base de datos desde cero? Esto BORRA la que exista con ese nombre. [s/N] " respuesta
@@ -62,6 +64,7 @@ else
 fi
 
 echo ""
-echo "==> Listo. Para levantar el backend:"
+echo "==> Listo. Hay que levantar las dos aplicaciones, cada una en su terminal:"
 echo "    source venv/bin/activate"
-echo "    cd backend && python app.py"
+echo "    cd backend  && python app.py    # la API, en el puerto 5000"
+echo "    cd frontend && python app.py    # la interfaz, en el puerto 3000"

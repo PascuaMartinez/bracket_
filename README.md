@@ -57,11 +57,13 @@ archivo de configuración a partir del `.env.example` y ofrece crear la
 base con el esquema. Se puede correr las veces que haga falta: no pisa
 un `.env` que ya exista ni toca la base sin confirmación.
 
-Después, completar `backend/.env` con los datos de la base y levantar:
+Después, completar `backend/.env` con los datos de la base y levantar las
+dos aplicaciones, cada una en su terminal:
 
 ```bash
 source venv/bin/activate
-cd backend && python app.py
+cd backend  && python app.py    # la API, en el puerto 5000
+cd frontend && python app.py    # la interfaz, en el puerto 3000
 ```
 
 ## Pruebas

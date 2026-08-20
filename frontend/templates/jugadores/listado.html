@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Jugadores · Bracket{% endblock %}
+
+{% block content %}
+<h1 class="titulo-pagina">Jugadores</h1>
+<p class="subtitulo">{{ jugadores | length }} registrado{{ 's' if jugadores | length != 1 }}.</p>
+
+{% if jugadores %}
+<div class="grilla">
+  {% for jugador in jugadores %}
+  <div class="panel">
+    <p class="titulo-seccion">{{ jugador.nombre }}</p>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="vacio">
+  <p>Todavía no hay jugadores cargados.</p>
+</div>
+{% endif %}
+{% endblock %}

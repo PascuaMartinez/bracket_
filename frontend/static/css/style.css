@@ -1,0 +1,164 @@
+/* =========================================================
+   Bracket
+
+   La idea rectora es el esquema técnico: un bracket es un
+   diagrama de líneas que convergen a un punto, y la interfaz
+   se lee como un plano antes que como un flyer de torneo. De
+   ahí el fondo claro, las hairlines en vez de bordes gruesos,
+   y que el peso visual lo lleve la estructura y no el color.
+
+   El acento es verde pino: sobrio, poco usado en este tipo de
+   producto, y sin las connotaciones de urgencia del rojo ni
+   las de "deporte genérico" del azul.
+   ========================================================= */
+:root {
+  --paper: #F7F7F5;       /* fondo de página, blanco apenas cálido */
+  --card: #FFFFFF;        /* superficie de tarjeta o panel */
+  --ink: #1C1F26;         /* texto principal, negro con matiz azulado */
+  --graphite: #5A6472;    /* texto secundario */
+  --pine: #2F5D50;        /* acento: acciones, elementos activos */
+  --pine-soft: #E8EFEC;   /* fondo suave del acento */
+  --amber: #8C6A3F;       /* en curso: contrapunto cálido al pino */
+  --line: #DDDCD7;        /* hairlines y divisores */
+
+  --font-titulo: "Archivo", system-ui, sans-serif;
+  --font-texto: "IBM Plex Sans", system-ui, sans-serif;
+  --font-dato: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-texto);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+a { color: var(--pine); }
+
+/* --- Estructura --- */
+
+.contenedor {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.encabezado {
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+
+.encabezado-interior {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 0;
+}
+
+.marca {
+  font-family: var(--font-titulo);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* El isotipo: dos líneas que convergen en una, que es lo que hace un
+   bracket. Se dibuja en CSS para no depender de un archivo de imagen. */
+.marca::before {
+  content: "";
+  width: 14px;
+  height: 18px;
+  border: 2px solid var(--pine);
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+}
+
+.navegacion {
+  display: flex;
+  gap: 4px;
+}
+
+.navegacion a {
+  padding: 8px 14px;
+  font-size: 14px;
+  color: var(--graphite);
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.navegacion a:hover { background: var(--pine-soft); color: var(--pine); }
+.navegacion a.activo { color: var(--pine); font-weight: 600; }
+
+main { padding: 36px 0 64px; }
+
+/* --- Encabezados de sección --- */
+
+.titulo-pagina {
+  font-family: var(--font-titulo);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0 0 4px;
+}
+
+.subtitulo {
+  color: var(--graphite);
+  margin: 0 0 28px;
+}
+
+.titulo-seccion {
+  font-family: var(--font-titulo);
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 14px;
+}
+
+/* --- Tarjetas --- */
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 20px;
+}
+
+.grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+/* --- Estados --- */
+
+.etiqueta {
+  display: inline-block;
+  font-family: var(--font-dato);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+}
+
+.etiqueta-en-curso { background: rgba(140, 106, 63, 0.12); color: var(--amber); }
+.etiqueta-finalizado { background: var(--pine-soft); color: var(--pine); }
+
+/* --- Vacío --- */
+
+.vacio {
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--graphite);
+}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="titulo-pagina">Bracket</h1>
+<p class="subtitulo">Gestor de torneos.</p>
+
+{% if error %}
+<div class="vacio">
+  <p>No se pudo contactar al backend.</p>
+  <p><code>{{ error }}</code></p>
+</div>
+{% else %}
+<div class="grilla">
+  <div class="panel">
+    <p class="titulo-seccion">Jugadores</p>
+    <p>{{ cantidad_jugadores }} registrado{{ 's' if cantidad_jugadores != 1 }}.</p>
+    <a href="{{ url_for('jugador.listado') }}">Ver todos</a>
+  </div>
+  <div class="panel">
+    <p class="titulo-seccion">Torneos</p>
+    <p>{{ cantidad_torneos }} en total.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
