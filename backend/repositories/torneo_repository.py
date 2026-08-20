@@ -37,13 +37,14 @@ def existe_sin_finalizar():
     return cantidad > 0
 
 
-def crear(nombre, modo, fecha, descripcion=None, lugar=None):
+def crear(nombre, modo, fecha, descripcion=None, lugar=None, vidas_iniciales=None):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        """INSERT INTO torneo (nombre, modo, fecha, descripcion, lugar, estado)
-           VALUES (%s, %s, %s, %s, %s, 'planificado')""",
-        (nombre, modo, fecha, descripcion, lugar),
+        """INSERT INTO torneo (nombre, modo, fecha, descripcion, lugar,
+                              vidas_iniciales, estado)
+           VALUES (%s, %s, %s, %s, %s, %s, 'planificado')""",
+        (nombre, modo, fecha, descripcion, lugar, vidas_iniciales),
     )
     conn.commit()
     nuevo_id = cursor.lastrowid

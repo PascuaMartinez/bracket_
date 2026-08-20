@@ -4,7 +4,7 @@ Reglas de negocio de partidos.
 Dos responsabilidades: armar el fixture cuando arranca un torneo, y
 registrar resultados a medida que se juegan.
 """
-from repositories import partido_repository, torneo_repository
+from repositories import partido_repository, torneo_repository, vidas_repository
 from services import bracket_service, fixture_service
 
 
@@ -16,7 +16,7 @@ class ResultadoInvalidoError(Exception):
     pass
 
 
-def generar_fixture(torneo_id, modo, jugadores_ids):
+def generar_fixture(torneo_id, modo, jugadores_ids, vidas_iniciales=None):
     """
     Arma los partidos iniciales del torneo y lo pasa a 'en curso'.
 
@@ -33,6 +33,8 @@ def generar_fixture(torneo_id, modo, jugadores_ids):
     """
     if modo == "eliminacion":
         return _generar_eliminacion(torneo_id, jugadores_ids)
+    if modo == "rey_de_la_cancha":
+        return _generar_rey_de_la_cancha(torneo_id, jugadores_ids, vidas_iniciales)
     return _generar_todos_contra_todos(torneo_id, jugadores_ids)
 
 
@@ -98,10 +100,13 @@ def cargar_resultado(partido_id, ganador_id, peleador1_id=None,
         partido_id, ganador_id, peleador1_id, peleador2_id, rondas_jugadas
     )
 
-    # En eliminación, terminar una ronda genera la siguiente. Se hace acá
-    # y no en un paso aparte para que el torneo avance solo a medida que
-    # se cargan resultados, sin que nadie tenga que pedirlo.
-    if partido.ronda is not None:
+    # Cada formato avanza distinto. Se hace acá y no en un paso aparte
+    # para que el torneo progrese solo a medida que se cargan resultados,
+    # sin que nadie tenga que pedirlo.
+    torneo = torneo_repository.obtener_por_id(partido.torneo_id)
+    if torneo.modo == "rey_de_la_cancha":
+        _avanzar_cola(partido, ganador_id)
+    elif partido.ronda is not None:
         _avanzar_bracket(partido.torneo_id, partido.ronda)
 
     # Cuando no queda ningún partido pendiente, el torneo terminó. Se
@@ -177,3 +182,95 @@ def _avanzar_bracket(torneo_id, ronda):
             "estado": "pendiente",
         })
     partido_repository.crear_muchos(partidos, con_ronda=True)
+
+
+def _generar_rey_de_la_cancha(torneo_id, jugadores_ids, vidas_iniciales):
+    """
+    Arranca la cola y crea el primer partido.
+
+    Acá no hay fixture que generar: el próximo cruce depende de quién gane
+    el anterior, así que solo se puede saber uno a la vez. Es el formato
+    donde menos se puede planificar de antemano -- ni siquiera se sabe
+    cuántos partidos va a tener el torneo.
+    """
+    vidas_repository.inicializar(torneo_id, jugadores_ids, vidas_iniciales)
+
+    partido_repository.crear_muchos([{
+        "torneo_id": torneo_id,
+        "jugador1_id": jugadores_ids[0],
+        "jugador2_id": jugadores_ids[1],
+        "orden": 1,
+        "jornada": None,
+        "ronda": None,
+        "es_pase_libre": False,
+        "ganador_id": None,
+        "estado": "pendiente",
+    }], con_ronda=True)
+
+    torneo_repository.cambiar_estado(torneo_id, "en_curso")
+    return 1
+
+
+def _avanzar_cola(partido, ganador_id):
+    """
+    Resuelve qué pasa después de un partido: el perdedor pierde una vida,
+    el ganador se queda en cancha, y entra el próximo de la cola.
+    """
+    torneo_id = partido.torneo_id
+    perdedor_id = (
+        partido.jugador2_id if ganador_id == partido.jugador1_id
+        else partido.jugador1_id
+    )
+
+    vidas_restantes = vidas_repository.descontar_vida(torneo_id, perdedor_id)
+
+    estado = vidas_repository.obtener_estado(torneo_id)
+
+    if vidas_restantes <= 0:
+        # El orden de eliminación se numera al caer y no se recalcula
+        # después: es el dato que dice quién aguantó más.
+        orden = vidas_repository.contar_eliminados(torneo_id) + 1
+        vidas_repository.eliminar(torneo_id, perdedor_id, orden)
+    else:
+        # Vuelve al final: la posición más alta que haya, más uno.
+        ultima = max((j["posicion_cola"] or 0) for j in estado)
+        vidas_repository.mandar_al_final_de_la_cola(torneo_id, perdedor_id, ultima + 1)
+
+    vidas_repository.poner_en_cancha(torneo_id, ganador_id)
+
+    # Se relee el estado: acaba de cambiar y decidir sobre el anterior
+    # dejaría al eliminado todavía como candidato a entrar.
+    estado = vidas_repository.obtener_estado(torneo_id)
+    en_pie = [j for j in estado if not j["eliminado"]]
+
+    if len(en_pie) <= 1:
+        torneo_repository.cambiar_estado(torneo_id, "finalizado")
+        return
+
+    desafiante = _proximo_en_la_cola(estado, ganador_id)
+    if desafiante is None:
+        return
+
+    partido_repository.crear_muchos([{
+        "torneo_id": torneo_id,
+        "jugador1_id": ganador_id,
+        "jugador2_id": desafiante["jugador_id"],
+        "orden": partido_repository.obtener_max_orden(torneo_id) + 1,
+        "jornada": None,
+        "ronda": None,
+        "es_pase_libre": False,
+        "ganador_id": None,
+        "estado": "pendiente",
+    }], con_ronda=True)
+
+
+def _proximo_en_la_cola(estado, en_cancha_id):
+    """El primero de la fila que no esté eliminado ni sea el que ya está
+    en cancha."""
+    esperando = [
+        j for j in estado
+        if not j["eliminado"] and j["jugador_id"] != en_cancha_id
+    ]
+    if not esperando:
+        return None
+    return min(esperando, key=lambda j: j["posicion_cola"] or 0)

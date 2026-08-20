@@ -10,7 +10,7 @@ from repositories import jugador_repository, torneo_repository
 # Por ahora solo el primer formato. La lista crece cuando se implementen
 # los demás, y validar contra ella evita que llegue a la base un modo
 # que ningún código sabe manejar.
-MODOS_VALIDOS = ("todos_contra_todos", "eliminacion")
+MODOS_VALIDOS = ("todos_contra_todos", "eliminacion", "rey_de_la_cancha")
 
 # Con menos de tres no hay torneo: dos jugadores es una serie de partidos
 # entre ellos, y no hay tabla de posiciones que valga la pena.
@@ -41,7 +41,8 @@ def obtener_participantes(torneo_id):
     return torneo_repository.obtener_participantes(torneo_id)
 
 
-def crear_torneo(nombre, modo, fecha, jugadores_ids, descripcion=None, lugar=None):
+def crear_torneo(nombre, modo, fecha, jugadores_ids, descripcion=None, lugar=None,
+                 vidas_iniciales=None):
     if not nombre or not nombre.strip():
         raise TorneoInvalidoError("El nombre del torneo es obligatorio")
 
@@ -61,10 +62,19 @@ def crear_torneo(nombre, modo, fecha, jugadores_ids, descripcion=None, lugar=Non
 
     jugadores_ids = _validar_jugadores(jugadores_ids)
 
+    # Sin vidas no hay forma de saber cuándo termina un torneo de rey de
+    # la cancha: la cola giraría para siempre.
+    if modo == "rey_de_la_cancha":
+        if not vidas_iniciales or vidas_iniciales < 1:
+            raise TorneoInvalidoError(
+                "Rey de la cancha necesita una cantidad de vidas válida"
+            )
+
     torneo_id = torneo_repository.crear(
         nombre.strip(), modo, fecha,
         (descripcion or "").strip() or None,
         (lugar or "").strip() or None,
+        vidas_iniciales if modo == "rey_de_la_cancha" else None,
     )
     torneo_repository.inscribir_jugadores(torneo_id, jugadores_ids)
 
@@ -74,7 +84,7 @@ def crear_torneo(nombre, modo, fecha, jugadores_ids, descripcion=None, lugar=Non
     # porque partido_service también necesita torneo_service, y a nivel
     # de módulo se trabarían entre sí.
     from services import partido_service
-    partido_service.generar_fixture(torneo_id, modo, jugadores_ids)
+    partido_service.generar_fixture(torneo_id, modo, jugadores_ids, vidas_iniciales)
 
     return obtener_torneo(torneo_id)
 
