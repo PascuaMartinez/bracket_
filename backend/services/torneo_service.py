@@ -67,6 +67,15 @@ def crear_torneo(nombre, modo, fecha, jugadores_ids, descripcion=None, lugar=Non
         (lugar or "").strip() or None,
     )
     torneo_repository.inscribir_jugadores(torneo_id, jugadores_ids)
+
+    # El fixture se arma acá y no en un paso aparte: un torneo sin
+    # partidos no sirve para nada, así que crearlo y generarlo son una
+    # sola operación desde afuera. El import va adentro de la función
+    # porque partido_service también necesita torneo_service, y a nivel
+    # de módulo se trabarían entre sí.
+    from services import partido_service
+    partido_service.generar_fixture(torneo_id, jugadores_ids)
+
     return obtener_torneo(torneo_id)
 
 
