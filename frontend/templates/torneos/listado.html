@@ -11,6 +11,7 @@
 </div>
 
 {% if torneos %}
+<div class="tabla-contenedor">
 <table class="tabla">
   <thead>
     <tr><th>Torneo</th><th>Formato</th><th>Fecha</th><th>Lugar</th><th>Estado</th></tr>
@@ -27,6 +28,7 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
 <div class="vacio"><p>Todavía no hay torneos.</p></div>
 {% endif %}

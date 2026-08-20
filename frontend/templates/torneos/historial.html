@@ -6,6 +6,7 @@
 <p class="subtitulo">El acumulado de todos los torneos finalizados.</p>
 
 {% if tabla %}
+<div class="tabla-contenedor">
 <table class="tabla">
   <thead>
     <tr><th>#</th><th>Jugador</th><th>Puntos</th><th>Torneos</th><th>PJ</th><th>PG</th><th>Win rate</th><th>Recorrido</th></tr>
@@ -27,6 +28,7 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
 <div class="vacio"><p>Todavía no hay torneos finalizados.</p></div>
 {% endif %}

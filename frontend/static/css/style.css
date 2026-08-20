@@ -298,3 +298,102 @@ main { padding: 36px 0 64px; }
 }
 
 .lista-partidos li { padding: 7px 6px; }
+
+/* =========================================================
+   Pantallas chicas
+
+   La pantalla de cargar resultado es la que más importa que
+   funcione acá: es la que se usa durante el torneo, parado y
+   con el teléfono en la mano. Las demás se miran más tranquilo,
+   pero igual tienen que entrar sin obligar a hacer zoom.
+   ========================================================= */
+
+@media (max-width: 760px) {
+
+  .contenedor { padding: 0 16px; }
+
+  /* El encabezado pasa a dos filas: la marca arriba y la
+     navegación abajo, que en una sola quedaban apretadas. */
+  .encabezado-interior {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .navegacion {
+    width: 100%;
+    /* Si en el futuro hay más enlaces de los que entran, se
+       deslizan de costado en vez de romper el diseño. */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .navegacion a { padding: 8px 12px; white-space: nowrap; }
+
+  /* El título y su acción dejan de compartir fila. El botón
+     pasa a ocupar el ancho completo: es más fácil de tocar con
+     el pulgar que uno chico en una esquina. */
+  .fila-titulo {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .fila-titulo .boton { text-align: center; }
+
+  .titulo-pagina { font-size: 23px; }
+
+  main { padding: 24px 0 48px; }
+
+  /* --- Tablas ---
+     Se deslizan de costado dentro de su propio marco en vez de
+     desbordar la página. Se eligió esto y no apilar cada fila
+     como tarjeta porque estas tablas son para COMPARAR: ver
+     quién tiene más puntos exige que las columnas queden
+     alineadas, y apiladas se pierde justamente eso. */
+  .tabla-contenedor {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    margin-bottom: 32px;
+  }
+
+  .tabla-contenedor .tabla {
+    margin-bottom: 0;
+    border: none;
+    border-radius: 0;
+    /* Un ancho mínimo para que las columnas no se aplasten
+       hasta volverse ilegibles: mejor deslizar que no entender. */
+    min-width: 560px;
+  }
+
+  .tabla th, .tabla td { padding: 10px 12px; }
+
+  /* --- Formularios ---
+     Al ancho completo y con campos más altos: son objetivos
+     táctiles, y uno chico se falla al tocar. */
+  .formulario { max-width: none; }
+
+  .campo input[type="text"],
+  .campo input[type="date"],
+  .campo input[type="number"],
+  .campo select {
+    /* 16px evita que el navegador del celular haga zoom solo al
+       enfocar el campo, que descoloca toda la pantalla. */
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  .opcion { padding: 10px 0; }
+
+  .boton { width: 100%; padding: 14px 18px; font-size: 15px; }
+
+  .grilla { grid-template-columns: 1fr; }
+}
+
+/* Pantallas muy angostas */
+@media (max-width: 400px) {
+  .titulo-pagina { font-size: 21px; }
+  .contenedor { padding: 0 12px; }
+}
