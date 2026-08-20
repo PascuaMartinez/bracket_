@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Personajes · Bracket{% endblock %}
+
+{% block content %}
+<div class="fila-titulo">
+  <div>
+    <h1 class="titulo-pagina">Personajes</h1>
+    <p class="subtitulo">{{ peleadores | length }} cargado{{ 's' if peleadores | length != 1 }}.</p>
+  </div>
+  <a class="boton" href="{{ url_for('peleador.nuevo') }}">Nuevo personaje</a>
+</div>
+
+{% if peleadores %}
+<div class="tabla-contenedor">
+<table class="tabla">
+  <tbody>
+    {% for p in peleadores %}
+    <tr>
+      <td>{{ p.nombre }}</td>
+      <td class="celda-acciones">
+        <a href="{{ url_for('peleador.editar', peleador_id=p.id) }}">Editar</a>
+        <form method="post" action="{{ url_for('peleador.eliminar', peleador_id=p.id) }}"
+              onsubmit="return confirm('¿Eliminar {{ p.nombre }}?')">
+          <button type="submit" class="enlace-peligro">Eliminar</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="vacio">
+  <p>Todavía no hay personajes cargados.</p>
+  <p class="tenue">Sirven para registrar con qué juega cada uno y ver qué
+     enfrentamientos son parejos.</p>
+  <p><a href="{{ url_for('peleador.nuevo') }}">Agregar el primero</a></p>
+</div>
+{% endif %}
+{% endblock %}

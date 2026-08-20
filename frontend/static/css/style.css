@@ -464,3 +464,33 @@ main { padding: 36px 0 64px; }
 }
 
 .boton-peligro:hover { background: #FBEAE7; }
+
+/* --- Acciones dentro de una fila de tabla --- */
+
+.celda-acciones {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.celda-acciones form { margin: 0; }
+
+/* Eliminar dentro de una lista va como enlace y no como botón: al lado de
+   "Editar" tiene que verse como una acción más, no gritar. */
+.enlace-peligro {
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: var(--font-texto);
+  font-size: 15px;
+  color: #A0483A;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.ayuda {
+  font-size: 13px;
+  color: var(--graphite);
+  margin: 2px 0 0;
+}
