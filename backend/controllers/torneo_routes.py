@@ -1,7 +1,7 @@
 """Endpoints de torneos."""
 from flask import Blueprint, jsonify, request
 
-from services import torneo_service
+from services import tabla_service, torneo_service
 
 torneo_bp = Blueprint("torneo", __name__, url_prefix="/torneos")
 
@@ -23,6 +23,15 @@ def obtener(torneo_id):
 def participantes(torneo_id):
     try:
         return jsonify(torneo_service.obtener_participantes(torneo_id)), 200
+    except torneo_service.TorneoNoEncontradoError as e:
+        return jsonify({"error": str(e)}), 404
+
+
+@torneo_bp.route("/<int:torneo_id>/tabla", methods=["GET"])
+def tabla(torneo_id):
+    try:
+        torneo_service.obtener_torneo(torneo_id)  # 404 si no existe
+        return jsonify(tabla_service.calcular_tabla(torneo_id)), 200
     except torneo_service.TorneoNoEncontradoError as e:
         return jsonify({"error": str(e)}), 404
 
