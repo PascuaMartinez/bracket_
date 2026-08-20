@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Torneos · Bracket{% endblock %}
+
+{% block content %}
+<div class="fila-titulo">
+  <div>
+    <h1 class="titulo-pagina">Torneos</h1>
+    <p class="subtitulo">{{ torneos | length }} en total.</p>
+  </div>
+  <a class="boton" href="{{ url_for('torneo.nuevo') }}">Nuevo torneo</a>
+</div>
+
+{% if torneos %}
+<table class="tabla">
+  <thead>
+    <tr><th>Torneo</th><th>Formato</th><th>Fecha</th><th>Lugar</th><th>Estado</th></tr>
+  </thead>
+  <tbody>
+    {% for t in torneos %}
+    <tr>
+      <td><a href="{{ url_for('torneo.detalle', torneo_id=t.id) }}">{{ t.nombre }}</a></td>
+      <td>{{ t.modo | nombre_formato }}</td>
+      <td class="dato">{{ t.fecha }}</td>
+      <td>{{ t.lugar or "—" }}</td>
+      <td><span class="etiqueta etiqueta-{{ t.estado }}">{{ t.estado | replace('_', ' ') }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="vacio"><p>Todavía no hay torneos.</p></div>
+{% endif %}
+{% endblock %}

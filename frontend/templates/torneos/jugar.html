@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Cargar resultado · Bracket{% endblock %}
+
+{% block content %}
+<p class="dato-tenue">{{ torneo.nombre }}</p>
+<h1 class="titulo-pagina">Cargar resultado</h1>
+
+<form method="post" class="panel formulario">
+  <input type="hidden" name="partido_id" value="{{ partido.id }}">
+
+  <fieldset class="campo">
+    <legend>¿Quién ganó?</legend>
+    <label class="opcion">
+      <input type="radio" name="ganador_id" value="{{ partido.jugador1_id }}" required>
+      {{ nombre1 }}
+    </label>
+    <label class="opcion">
+      <input type="radio" name="ganador_id" value="{{ partido.jugador2_id }}">
+      {{ nombre2 }}
+    </label>
+  </fieldset>
+
+  {# Los personajes y las rondas son opcionales: en un torneo en vivo se
+     cargan si hay tiempo, y obligarlos haría que registrar un resultado
+     tarde más que jugar el partido. #}
+  <div class="campo">
+    <label for="peleador1_id">Personaje de {{ nombre1 }} <span class="tenue">(opcional)</span></label>
+    <select id="peleador1_id" name="peleador1_id">
+      <option value="">Sin registrar</option>
+      {% for p in peleadores %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
+    </select>
+  </div>
+
+  <div class="campo">
+    <label for="peleador2_id">Personaje de {{ nombre2 }} <span class="tenue">(opcional)</span></label>
+    <select id="peleador2_id" name="peleador2_id">
+      <option value="">Sin registrar</option>
+      {% for p in peleadores %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
+    </select>
+  </div>
+
+  <div class="campo">
+    <label for="rondas_jugadas">Rondas <span class="tenue">(opcional)</span></label>
+    <select id="rondas_jugadas" name="rondas_jugadas">
+      <option value="">Sin registrar</option>
+      <option value="2">2-0</option>
+      <option value="3">2-1</option>
+    </select>
+  </div>
+
+  <button type="submit" class="boton">Guardar</button>
+</form>
+{% endblock %}

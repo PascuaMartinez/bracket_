@@ -1,0 +1,46 @@
+"""
+Datos de torneos, tal como los necesitan las pantallas.
+
+Esta capa existe para que las rutas no tengan que saber qué endpoints
+combinar ni cómo se llaman los campos del backend. Una pantalla pide "el
+detalle del torneo" y recibe todo junto.
+"""
+from services import api
+
+
+def listar():
+    return api.get("/torneos")
+
+
+def obtener(torneo_id):
+    return api.get(f"/torneos/{torneo_id}")
+
+
+def detalle_completo(torneo_id):
+    """El torneo con todo lo que la pantalla de detalle necesita.
+
+    Se juntan acá las tres llamadas y no en la plantilla para que la
+    pantalla reciba un dato ya armado: si mañana el backend expone todo
+    en un solo endpoint, cambia esta función y nada más."""
+    return {
+        "torneo": obtener(torneo_id),
+        "tabla": api.get(f"/torneos/{torneo_id}/tabla"),
+        "partidos": api.get(f"/torneos/{torneo_id}/partidos"),
+    }
+
+
+def partido_actual(torneo_id):
+    """El próximo partido a jugar, o None si ya se jugaron todos."""
+    return api.get(f"/torneos/{torneo_id}/partido-actual")
+
+
+def crear(datos):
+    return api.post("/torneos", datos)
+
+
+def cargar_resultado(partido_id, datos):
+    return api.post(f"/partidos/{partido_id}/resultado", datos)
+
+
+def tabla_historica():
+    return api.get("/torneos/tabla-historica")

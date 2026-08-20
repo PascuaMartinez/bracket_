@@ -162,3 +162,139 @@ main { padding: 36px 0 64px; }
   text-align: center;
   color: var(--graphite);
 }
+
+/* --- Encabezado con acción al costado --- */
+
+.fila-titulo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.fila-titulo .titulo-pagina,
+.fila-titulo .subtitulo { margin-bottom: 0; }
+
+/* --- Botones --- */
+
+.boton {
+  display: inline-block;
+  background: var(--pine);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 18px;
+  font-family: var(--font-texto);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.boton:hover { background: #26483E; }
+
+/* --- Tablas ---
+   Sin bordes verticales y con hairlines finas: la grilla se sugiere con
+   el espaciado en vez de dibujarse, que es lo que hace que se lea como
+   una planilla técnica y no como una tabla de sitio web. */
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+
+.tabla th {
+  text-align: left;
+  font-family: var(--font-dato);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tabla td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tabla tbody tr:last-child td { border-bottom: none; }
+.tabla tbody tr:hover { background: var(--pine-soft); }
+
+/* Los números en monoespaciada: alinean en columna y se comparan de un
+   vistazo, que es para lo que están. */
+.dato { font-family: var(--font-dato); font-size: 13px; }
+.dato-tenue { font-family: var(--font-dato); font-size: 12px; color: var(--graphite); margin: 0 0 4px; }
+.destacado { font-weight: 500; color: var(--pine); }
+.tenue { color: var(--graphite); }
+
+/* --- Formularios --- */
+
+.formulario { max-width: 520px; display: flex; flex-direction: column; gap: 18px; }
+
+.campo { display: flex; flex-direction: column; gap: 6px; border: none; padding: 0; margin: 0; }
+
+.campo label, .campo legend {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--graphite);
+  padding: 0;
+}
+
+.campo input[type="text"],
+.campo input[type="date"],
+.campo input[type="number"],
+.campo select {
+  font-family: var(--font-texto);
+  font-size: 15px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--ink);
+}
+
+.campo input:focus, .campo select:focus {
+  outline: none;
+  border-color: var(--pine);
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+  color: var(--ink);
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.aviso-error {
+  background: #FBEAE7;
+  border: 1px solid #E8C4BC;
+  border-radius: 4px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+/* --- Listas --- */
+
+.lista-partidos {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin: 0;
+  padding: 8px 8px 8px 40px;
+}
+
+.lista-partidos li { padding: 7px 6px; }

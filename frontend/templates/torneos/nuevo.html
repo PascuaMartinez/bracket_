@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Nuevo torneo · Bracket{% endblock %}
+
+{% block content %}
+<h1 class="titulo-pagina">Nuevo torneo</h1>
+
+{% if error %}<div class="aviso-error">{{ error }}</div>{% endif %}
+
+<form method="post" class="panel formulario">
+  <div class="campo">
+    <label for="nombre">Nombre</label>
+    <input type="text" id="nombre" name="nombre" required value="{{ form.nombre if form }}">
+  </div>
+
+  <div class="campo">
+    <label for="modo">Formato</label>
+    <select id="modo" name="modo" required>
+      <option value="todos_contra_todos">Todos contra todos</option>
+      <option value="eliminacion">Eliminación directa</option>
+      <option value="rey_de_la_cancha">Rey de la cancha</option>
+    </select>
+  </div>
+
+  {# Solo aplica a rey de la cancha, pero se muestra siempre: esconderlo
+     necesitaría JavaScript, y el backend ignora el campo en los otros
+     formatos. #}
+  <div class="campo">
+    <label for="vidas_iniciales">Vidas por jugador <span class="tenue">(solo rey de la cancha)</span></label>
+    <input type="number" id="vidas_iniciales" name="vidas_iniciales" min="1" value="3">
+  </div>
+
+  <div class="campo">
+    <label for="fecha">Fecha</label>
+    <input type="date" id="fecha" name="fecha" required value="{{ form.fecha if form }}">
+  </div>
+
+  <div class="campo">
+    <label for="lugar">Lugar <span class="tenue">(opcional)</span></label>
+    <input type="text" id="lugar" name="lugar" value="{{ form.lugar if form }}">
+  </div>
+
+  <fieldset class="campo">
+    <legend>Jugadores</legend>
+    {% for j in jugadores %}
+    <label class="opcion">
+      <input type="checkbox" name="jugadores_ids" value="{{ j.id }}">
+      {{ j.nombre }}
+    </label>
+    {% endfor %}
+  </fieldset>
+
+  <button type="submit" class="boton">Crear torneo</button>
+</form>
+{% endblock %}
