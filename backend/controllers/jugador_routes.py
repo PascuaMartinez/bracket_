@@ -10,7 +10,7 @@ que corresponde, para que el servicio pueda ignorar que HTTP existe.
 """
 from flask import Blueprint, jsonify, request
 
-from services import jugador_service
+from services import estadisticas_service, jugador_service
 
 jugador_bp = Blueprint("jugador", __name__, url_prefix="/jugadores")
 
@@ -25,6 +25,14 @@ def obtener(jugador_id):
     try:
         return jsonify(jugador_service.obtener_jugador(jugador_id)), 200
     except jugador_service.JugadorNoEncontradoError as e:
+        return jsonify({"error": str(e)}), 404
+
+
+@jugador_bp.route("/<int:jugador_id>/estadisticas", methods=["GET"])
+def estadisticas(jugador_id):
+    try:
+        return jsonify(estadisticas_service.obtener_estadisticas(jugador_id)), 200
+    except estadisticas_service.JugadorNoEncontradoError as e:
         return jsonify({"error": str(e)}), 404
 
 
