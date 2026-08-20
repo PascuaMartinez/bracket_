@@ -32,7 +32,7 @@ CREATE TABLE peleador (
 CREATE TABLE torneo (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
-    modo ENUM('todos_contra_todos', 'eliminacion') NOT NULL,
+    modo ENUM('todos_contra_todos', 'eliminacion', 'rey_de_la_cancha') NOT NULL,
     fecha DATE NOT NULL,
     -- El estado es del torneo, no un cálculo sobre sus partidos: un
     -- torneo puede estar planificado sin tener ningún partido todavía,
@@ -40,7 +40,9 @@ CREATE TABLE torneo (
     -- edite un resultado.
     estado ENUM('planificado', 'en_curso', 'finalizado') DEFAULT 'planificado',
     descripcion TEXT NULL,
-    lugar VARCHAR(150) NULL
+    lugar VARCHAR(150) NULL,
+    -- Solo para rey de la cancha: con cuántas vidas arranca cada uno.
+    vidas_iniciales INT NULL
 );
 
 -- La participación de un jugador en un torneo es una entidad, no una
@@ -107,4 +109,26 @@ CREATE TABLE partido (
     FOREIGN KEY (ganador_id) REFERENCES jugador(id),
     FOREIGN KEY (jugador1_peleador_id) REFERENCES peleador(id),
     FOREIGN KEY (jugador2_peleador_id) REFERENCES peleador(id)
+);
+
+
+-- Estado de cada jugador en un torneo de rey de la cancha: cuántas vidas
+-- le quedan, en qué lugar de la cola está y si ya quedó eliminado.
+--
+-- Va en su propia tabla y no como columnas de torneo_jugador porque solo
+-- aplica a un formato: sumarle esas columnas a todos los torneos dejaría
+-- la mayoría en NULL sin significar nada.
+CREATE TABLE torneo_jugador_vidas (
+    torneo_jugador_id INT PRIMARY KEY,
+    vidas INT NOT NULL,
+    -- La posición en la cola cambia todo el tiempo: el que pierde vuelve
+    -- al final. Se guarda como número y se reordena, en vez de mover
+    -- filas.
+    posicion_cola INT NULL,
+    en_cancha BOOLEAN NOT NULL DEFAULT FALSE,
+    eliminado BOOLEAN NOT NULL DEFAULT FALSE,
+    -- En qué orden fue cayendo cada uno. Sirve para la tabla final: el
+    -- que aguantó hasta el final vale más que el primero en irse.
+    orden_eliminacion INT NULL,
+    FOREIGN KEY (torneo_jugador_id) REFERENCES torneo_jugador(id)
 );
