@@ -26,7 +26,12 @@ def partido(jugador1, jugador2, ganador, estado="finalizado"):
 
 
 def calcular(participantes, partidos):
-    with patch.object(tabla_service.torneo_repository, "obtener_participantes",
+    """calcular_tabla consulta el modo del torneo para saber qué criterio
+    aplicar, así que hay que decirle de qué formato se trata."""
+    torneo = SimpleNamespace(id=1, modo="todos_contra_todos")
+    with patch.object(tabla_service.torneo_repository, "obtener_por_id",
+                      return_value=torneo), \
+         patch.object(tabla_service.torneo_repository, "obtener_participantes",
                       return_value=participantes), \
          patch.object(tabla_service.partido_repository, "obtener_por_torneo",
                       return_value=partidos):
