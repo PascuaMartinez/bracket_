@@ -64,6 +64,18 @@ source venv/bin/activate
 cd backend && python app.py
 ```
 
+## Pruebas
+
+```bash
+source venv/bin/activate
+cd backend && pytest
+```
+
+Las pruebas no necesitan base de datos. La lógica que no depende de nada
+externo (el armado del fixture) se prueba directo, y la que lee datos se
+prueba sustituyendo los repositorios. Eso es posible porque el acceso a
+datos está aislado en su propia capa.
+
 ## Estado
 
 En desarrollo. Este README se actualiza a medida que el proyecto avanza.
