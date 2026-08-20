@@ -1,7 +1,7 @@
 """Endpoints de torneos."""
 from flask import Blueprint, jsonify, request
 
-from services import tabla_service, torneo_service
+from services import tabla_historica_service, tabla_service, torneo_service
 
 torneo_bp = Blueprint("torneo", __name__, url_prefix="/torneos")
 
@@ -9,6 +9,11 @@ torneo_bp = Blueprint("torneo", __name__, url_prefix="/torneos")
 @torneo_bp.route("", methods=["GET"])
 def listar():
     return jsonify(torneo_service.listar_torneos()), 200
+
+
+@torneo_bp.route("/tabla-historica", methods=["GET"])
+def tabla_historica():
+    return jsonify(tabla_historica_service.calcular_tabla_historica()), 200
 
 
 @torneo_bp.route("/<int:torneo_id>", methods=["GET"])
