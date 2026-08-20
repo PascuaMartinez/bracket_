@@ -5,7 +5,7 @@ Dos responsabilidades: armar el fixture cuando arranca un torneo, y
 registrar resultados a medida que se juegan.
 """
 from repositories import partido_repository, torneo_repository
-from services import fixture_service
+from services import bracket_service, fixture_service
 
 
 class PartidoNoEncontradoError(Exception):
@@ -16,16 +16,27 @@ class ResultadoInvalidoError(Exception):
     pass
 
 
-def generar_fixture(torneo_id, jugadores_ids):
+def generar_fixture(torneo_id, modo, jugadores_ids):
     """
-    Arma todos los partidos del torneo y lo pasa a 'en curso'.
+    Arma los partidos iniciales del torneo y lo pasa a 'en curso'.
 
-    El fixture se genera entero de una vez y no partido a partido: en
-    todos contra todos se sabe desde el arranque quién juega contra quién,
-    así que tenerlo completo permite mostrar lo que falta y estimar cuánto
-    queda. (Formatos donde el próximo cruce depende del resultado anterior
-    van a necesitar otra estrategia.)
+    Cuánto se puede generar de antemano depende del formato, y esa es la
+    diferencia de fondo entre los dos:
+
+    - En todos contra todos se sabe desde el arranque quién juega contra
+      quién, así que se genera el fixture completo. Eso permite mostrar
+      todo lo que falta y estimar cuánto queda.
+
+    - En eliminación solo se puede armar la primera ronda: quién juega en
+      la segunda depende de quién gane en la primera. El resto se va
+      generando a medida que se cargan resultados.
     """
+    if modo == "eliminacion":
+        return _generar_eliminacion(torneo_id, jugadores_ids)
+    return _generar_todos_contra_todos(torneo_id, jugadores_ids)
+
+
+def _generar_todos_contra_todos(torneo_id, jugadores_ids):
     jornadas = fixture_service.fixture_round_robin(jugadores_ids)
 
     partidos = []
@@ -87,6 +98,12 @@ def cargar_resultado(partido_id, ganador_id, peleador1_id=None,
         partido_id, ganador_id, peleador1_id, peleador2_id, rondas_jugadas
     )
 
+    # En eliminación, terminar una ronda genera la siguiente. Se hace acá
+    # y no en un paso aparte para que el torneo avance solo a medida que
+    # se cargan resultados, sin que nadie tenga que pedirlo.
+    if partido.ronda is not None:
+        _avanzar_bracket(partido.torneo_id, partido.ronda)
+
     # Cuando no queda ningún partido pendiente, el torneo terminó. Se
     # decide acá y no desde afuera para que nadie tenga que acordarse de
     # cerrar el torneo a mano.
@@ -94,3 +111,69 @@ def cargar_resultado(partido_id, ganador_id, peleador1_id=None,
         torneo_repository.cambiar_estado(partido.torneo_id, "finalizado")
 
     return partido_repository.obtener_por_id(partido_id).to_dict()
+
+
+def _generar_eliminacion(torneo_id, jugadores_ids):
+    """Crea solo la primera ronda del cuadro."""
+    cruces = bracket_service.sembrar_primera_ronda(jugadores_ids)
+
+    partidos = []
+    orden = 1
+    for jugador1, jugador2 in cruces:
+        # Los cruces contra un lugar vacío no son partidos: ese jugador
+        # pasa de ronda sin jugar y aparece directamente en la siguiente.
+        if jugador2 is None:
+            continue
+        partidos.append({
+            "torneo_id": torneo_id,
+            "jugador1_id": jugador1,
+            "jugador2_id": jugador2,
+            "orden": orden,
+            "jornada": None,
+            "ronda": 1,
+        })
+        orden += 1
+
+    partido_repository.crear_muchos(partidos, con_ronda=True)
+    torneo_repository.cambiar_estado(torneo_id, "en_curso")
+
+    # Los que pasaron sin jugar quedan esperando: se suman a la ronda 2
+    # cuando se genere, junto con los ganadores de la ronda 1.
+    _clasificados_sin_jugar[torneo_id] = [j1 for j1, j2 in cruces if j2 is None]
+    return len(partidos)
+
+
+# Los jugadores que pasaron de ronda sin jugar. Se guardan en memoria y no
+# en la base porque son un detalle del armado inicial, no un dato del
+# torneo: apenas se genera la ronda 2 dejan de existir como concepto.
+_clasificados_sin_jugar = {}
+
+
+def _avanzar_bracket(torneo_id, ronda):
+    """Si la ronda terminó, genera la siguiente con los ganadores."""
+    partidos_ronda = partido_repository.obtener_por_ronda(torneo_id, ronda)
+    if any(p.estado != "finalizado" for p in partidos_ronda):
+        return  # todavía falta jugar alguno
+
+    ganadores = [p.ganador_id for p in partidos_ronda]
+    # En la primera ronda se suman los que pasaron sin jugar. Van adelante
+    # para que mantengan la ventaja de su siembra.
+    if ronda == 1:
+        ganadores = _clasificados_sin_jugar.pop(torneo_id, []) + ganadores
+
+    if len(ganadores) <= 1:
+        return  # ya hay campeón, no hay ronda siguiente
+
+    orden = partido_repository.obtener_max_orden(torneo_id)
+    partidos = []
+    for i in range(0, len(ganadores), 2):
+        orden += 1
+        partidos.append({
+            "torneo_id": torneo_id,
+            "jugador1_id": ganadores[i],
+            "jugador2_id": ganadores[i + 1],
+            "orden": orden,
+            "jornada": None,
+            "ronda": ronda + 1,
+        })
+    partido_repository.crear_muchos(partidos, con_ronda=True)

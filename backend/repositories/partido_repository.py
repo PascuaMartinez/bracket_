@@ -3,19 +3,23 @@ from database.db import get_connection
 from models.partido import Partido
 
 
-def crear_muchos(partidos):
-    """Inserta el fixture completo de una vez.
+def crear_muchos(partidos, con_ronda=False):
+    """Inserta varios partidos de una vez.
 
-    Una sola consulta con todos los partidos en vez de una por partido:
-    con 10 jugadores son 45 enfrentamientos, y 45 idas y vueltas a la base
-    para algo que se puede hacer en una no tiene sentido."""
+    Una sola consulta con todos en vez de una por partido: con 10
+    jugadores son 45 enfrentamientos, y 45 idas y vueltas a la base para
+    algo que se puede hacer en una no tiene sentido."""
     if not partidos:
         return
+    columnas = "torneo_id, jugador1_id, jugador2_id, orden, jornada"
+    valores = "%(torneo_id)s, %(jugador1_id)s, %(jugador2_id)s, %(orden)s, %(jornada)s"
+    if con_ronda:
+        columnas += ", ronda"
+        valores += ", %(ronda)s"
     conn = get_connection()
     cursor = conn.cursor()
     cursor.executemany(
-        """INSERT INTO partido (torneo_id, jugador1_id, jugador2_id, orden, jornada)
-           VALUES (%(torneo_id)s, %(jugador1_id)s, %(jugador2_id)s, %(orden)s, %(jornada)s)""",
+        f"INSERT INTO partido ({columnas}) VALUES ({valores})",
         partidos,
     )
     conn.commit()
@@ -90,3 +94,31 @@ def quedan_pendientes(torneo_id):
     cursor.close()
     conn.close()
     return cantidad > 0
+
+
+def obtener_por_ronda(torneo_id, ronda):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        """SELECT * FROM partido WHERE torneo_id = %s AND ronda = %s
+           ORDER BY orden ASC""",
+        (torneo_id, ronda),
+    )
+    filas = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return [Partido.from_row(f) for f in filas]
+
+
+def obtener_max_orden(torneo_id):
+    """El orden más alto usado hasta ahora, para seguir numerando cuando
+    se generan partidos nuevos sobre la marcha."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COALESCE(MAX(orden), 0) FROM partido WHERE torneo_id = %s", (torneo_id,)
+    )
+    maximo = cursor.fetchone()[0]
+    cursor.close()
+    conn.close()
+    return maximo

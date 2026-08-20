@@ -32,7 +32,7 @@ CREATE TABLE peleador (
 CREATE TABLE torneo (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
-    modo ENUM('todos_contra_todos') NOT NULL,
+    modo ENUM('todos_contra_todos', 'eliminacion') NOT NULL,
     fecha DATE NOT NULL,
     -- El estado es del torneo, no un cálculo sobre sus partidos: un
     -- torneo puede estar planificado sin tener ningún partido todavía,
@@ -83,6 +83,13 @@ CREATE TABLE partido (
     -- el orden importa para reconstruir cómo se dio el torneo.
     orden INT NULL,
     jornada INT NULL,
+
+    -- En qué ronda del cuadro se juega: 1 es la primera, y la última es la
+    -- final. Se numera desde el principio y no desde el final ("octavos",
+    -- "cuartos") porque eso depende de cuántos jugadores haya, y el mismo
+    -- número significaría cosas distintas en cada torneo. El nombre de la
+    -- ronda se deduce después, mirando cuántos partidos tiene.
+    ronda INT NULL,
 
     estado ENUM('pendiente', 'en_curso', 'finalizado', 'pospuesto') DEFAULT 'pendiente',
     fecha_jugado DATETIME NULL,

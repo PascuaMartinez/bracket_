@@ -10,7 +10,7 @@ from repositories import jugador_repository, torneo_repository
 # Por ahora solo el primer formato. La lista crece cuando se implementen
 # los demás, y validar contra ella evita que llegue a la base un modo
 # que ningún código sabe manejar.
-MODOS_VALIDOS = ("todos_contra_todos",)
+MODOS_VALIDOS = ("todos_contra_todos", "eliminacion")
 
 # Con menos de tres no hay torneo: dos jugadores es una serie de partidos
 # entre ellos, y no hay tabla de posiciones que valga la pena.
@@ -74,7 +74,7 @@ def crear_torneo(nombre, modo, fecha, jugadores_ids, descripcion=None, lugar=Non
     # porque partido_service también necesita torneo_service, y a nivel
     # de módulo se trabarían entre sí.
     from services import partido_service
-    partido_service.generar_fixture(torneo_id, jugadores_ids)
+    partido_service.generar_fixture(torneo_id, modo, jugadores_ids)
 
     return obtener_torneo(torneo_id)
 
