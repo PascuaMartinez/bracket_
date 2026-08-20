@@ -24,6 +24,16 @@ def create_app():
     def nombre_formato(valor):
         return NOMBRES_DE_FORMATO.get(valor, (valor or "").replace("_", " "))
 
+    @app.template_filter("nombres_y_veces")
+    def nombres_y_veces(lista, campo):
+        """Muestra una lista de rivales con su número al lado.
+
+        Las estadísticas devuelven TODOS los que empatan en el máximo, no
+        uno solo, así que la plantilla tiene que poder mostrar varios."""
+        if not lista:
+            return "—"
+        return ", ".join(f"{r['nombre']} ({r[campo]})" for r in lista)
+
     @app.template_filter("nombre_jugador")
     def nombre_jugador(jugador_id):
         """Los partidos vienen con ids, no con nombres. Se resuelve acá y

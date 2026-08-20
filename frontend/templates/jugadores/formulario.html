@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ "Editar" if jugador else "Nuevo" }} jugador · Bracket{% endblock %}
+
+{% block content %}
+{# Una sola plantilla para crear y editar: los campos son los mismos, y
+   tener dos copias garantiza que tarde o temprano se desincronicen. #}
+<h1 class="titulo-pagina">{{ "Editar jugador" if jugador else "Nuevo jugador" }}</h1>
+
+{% if error %}<div class="aviso-error">{{ error }}</div>{% endif %}
+
+<form method="post" class="panel formulario">
+  <div class="campo">
+    <label for="nombre">Nombre</label>
+    <input type="text" id="nombre" name="nombre" required
+           value="{{ jugador.nombre if jugador else '' }}">
+  </div>
+
+  <div class="campo">
+    <label for="fecha_nacimiento">Fecha de nacimiento <span class="tenue">(opcional)</span></label>
+    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento"
+           value="{{ jugador.fecha_nacimiento if jugador and jugador.fecha_nacimiento else '' }}">
+  </div>
+
+  <div class="acciones">
+    <button type="submit" class="boton">Guardar</button>
+    <a class="boton-secundario" href="{{ url_for('jugador.listado') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

@@ -397,3 +397,70 @@ main { padding: 36px 0 64px; }
   .titulo-pagina { font-size: 21px; }
   .contenedor { padding: 0 12px; }
 }
+
+/* --- Tarjetas que son enlaces --- */
+
+.panel-enlace {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.panel-enlace:hover { border-color: var(--pine); }
+
+/* --- Números destacados ---
+   Para los datos que se miran de un vistazo: cantidad de partidos, win
+   rate. En monoespaciada y grandes, con la etiqueta abajo en chico. */
+
+.grilla-numeros { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+
+.numero { text-align: center; }
+
+.numero-valor {
+  font-family: var(--font-dato);
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--pine);
+  margin: 0;
+}
+
+.numero-etiqueta {
+  font-size: 12px;
+  color: var(--graphite);
+  margin: 2px 0 0;
+}
+
+/* --- Botones secundarios y de riesgo --- */
+
+.acciones { display: flex; gap: 10px; align-items: center; }
+
+.boton-secundario {
+  display: inline-block;
+  padding: 10px 18px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--graphite);
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.boton-secundario:hover { border-color: var(--graphite); color: var(--ink); }
+
+/* Las acciones destructivas van discretas y separadas del resto: no
+   deberían competir por la atención con las acciones normales, ni quedar
+   al lado del botón de guardar. */
+.boton-peligro {
+  margin-top: 40px;
+  padding: 9px 16px;
+  border: 1px solid #E0C4BE;
+  border-radius: 4px;
+  background: none;
+  color: #A0483A;
+  font-family: var(--font-texto);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.boton-peligro:hover { background: #FBEAE7; }

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ jugador.nombre }} · Bracket{% endblock %}
+
+{% block content %}
+<div class="fila-titulo">
+  <h1 class="titulo-pagina">{{ jugador.nombre }}</h1>
+  <a class="boton-secundario" href="{{ url_for('jugador.editar', jugador_id=jugador.id) }}">Editar</a>
+</div>
+
+{% if estadisticas.partidos_jugados %}
+<div class="grilla grilla-numeros">
+  <div class="panel numero">
+    <p class="numero-valor">{{ estadisticas.partidos_jugados }}</p>
+    <p class="numero-etiqueta">Partidos</p>
+  </div>
+  <div class="panel numero">
+    <p class="numero-valor">{{ (estadisticas.win_rate * 100) | round | int }}%</p>
+    <p class="numero-etiqueta">Win rate</p>
+  </div>
+  <div class="panel numero">
+    <p class="numero-valor">{{ estadisticas.mejor_racha }}</p>
+    <p class="numero-etiqueta">Mejor racha</p>
+  </div>
+  <div class="panel numero">
+    <p class="numero-valor">{{ estadisticas.torneos_jugados }}</p>
+    <p class="numero-etiqueta">Torneos</p>
+  </div>
+</div>
+
+<h2 class="titulo-seccion">Rivales</h2>
+<div class="tabla-contenedor">
+<table class="tabla">
+  <tbody>
+    {# Cada una puede devolver varios: si empató entre dos rivales, las
+       dos respuestas son igual de ciertas. #}
+    <tr>
+      <td>Con quién jugó más</td>
+      <td>{{ estadisticas.rival_mas_frecuente | nombres_y_veces('jugados') }}</td>
+    </tr>
+    <tr>
+      <td>A quién le ganó más</td>
+      <td>{{ estadisticas.a_quien_le_gano_mas | nombres_y_veces('ganados') }}</td>
+    </tr>
+    <tr>
+      <td>Contra quién perdió más</td>
+      <td>{{ estadisticas.contra_quien_perdio_mas | nombres_y_veces('perdidos') }}</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="vacio"><p>Todavía no jugó ningún partido.</p></div>
+{% endif %}
+
+<form method="post" action="{{ url_for('jugador.eliminar', jugador_id=jugador.id) }}"
+      onsubmit="return confirm('¿Eliminar a {{ jugador.nombre }}? No se puede deshacer.')">
+  <button type="submit" class="boton-peligro">Eliminar jugador</button>
+</form>
+{% endblock %}
