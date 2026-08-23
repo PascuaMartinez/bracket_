@@ -10,6 +10,7 @@ import mysql.connector
 from mysql.connector import Error
 
 from config import Config
+from database import medicion
 
 
 def _config():
@@ -22,6 +23,45 @@ def _config():
     }
 
 
+class _ConexionMedida:
+    """
+    Envuelve la conexión para contar las consultas que pasan por ella.
+
+    Va acá y no en cada repositorio: son decenas de funciones, y agregarle
+    a cada una una línea de medición sería ruido que además se olvidaría
+    en la próxima que se escriba. Envolviendo la conexión, todo lo que
+    consulte queda contado sin que nadie tenga que acordarse.
+    """
+
+    def __init__(self, conexion):
+        self._conexion = conexion
+
+    def cursor(self, *args, **kwargs):
+        return _CursorMedido(self._conexion.cursor(*args, **kwargs))
+
+    def __getattr__(self, nombre):
+        return getattr(self._conexion, nombre)
+
+
+class _CursorMedido:
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def execute(self, consulta, *args, **kwargs):
+        medicion.registrar(consulta)
+        return self._cursor.execute(consulta, *args, **kwargs)
+
+    def executemany(self, consulta, *args, **kwargs):
+        medicion.registrar(consulta)
+        return self._cursor.executemany(consulta, *args, **kwargs)
+
+    def __getattr__(self, nombre):
+        return getattr(self._cursor, nombre)
+
+    def __iter__(self):
+        return iter(self._cursor)
+
+
 def get_connection():
     """
     Devuelve una conexión lista para usar.
@@ -31,6 +71,6 @@ def get_connection():
     el driver no hay que tocar los except de todo el proyecto.
     """
     try:
-        return mysql.connector.connect(**_config())
+        return _ConexionMedida(mysql.connector.connect(**_config()))
     except Error as e:
         raise RuntimeError(f"No se pudo conectar a la base de datos: {e}")
