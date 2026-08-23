@@ -94,3 +94,41 @@ def _entero_o_nada(valor):
     """Los campos opcionales llegan como texto vacío cuando no se
     completan, y el backend espera un número o nada."""
     return int(valor) if valor else None
+
+
+@torneo_bp.route("/<int:torneo_id>/editar", methods=["GET", "POST"])
+@auth.requiere_sesion
+def editar(torneo_id):
+    """
+    Solo se editan los datos descriptivos: nombre, fecha, lugar y
+    descripción.
+
+    El formato y los participantes NO se pueden cambiar. Con partidos ya
+    jugados, cambiar el formato dejaría el torneo inconsistente con lo que
+    efectivamente pasó, y sacar a alguien que ya jugó dejaría resultados
+    huérfanos. Si hay que corregir eso, corresponde borrar el torneo y
+    rehacerlo.
+    """
+    if request.method == "GET":
+        return render_template("torneos/editar.html",
+                               torneo=torneos.obtener(torneo_id), error=None)
+
+    try:
+        torneos.actualizar(torneo_id, {
+            "nombre": request.form.get("nombre"),
+            "fecha": request.form.get("fecha"),
+            "lugar": request.form.get("lugar"),
+            "descripcion": request.form.get("descripcion"),
+        })
+    except api.ErrorDeApi as e:
+        return render_template("torneos/editar.html", torneo=request.form,
+                               error=str(e)), 400
+
+    return redirect(url_for("torneo.detalle", torneo_id=torneo_id))
+
+
+@torneo_bp.route("/<int:torneo_id>/eliminar", methods=["POST"])
+@auth.requiere_sesion
+def eliminar(torneo_id):
+    torneos.eliminar(torneo_id)
+    return redirect(url_for("torneo.listado"))

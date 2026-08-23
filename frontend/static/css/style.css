@@ -518,3 +518,16 @@ main { padding: 36px 0 64px; }
 }
 
 .ver-password { font-size: 13px; color: var(--graphite); font-weight: 400; }
+
+.campo textarea {
+  font-family: var(--font-texto);
+  font-size: 15px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--ink);
+  resize: vertical;
+}
+
+.campo textarea:focus { outline: none; border-color: var(--pine); }

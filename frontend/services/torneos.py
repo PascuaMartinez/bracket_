@@ -38,6 +38,14 @@ def crear(datos):
     return api.post("/torneos", datos)
 
 
+def actualizar(torneo_id, datos):
+    return api.put(f"/torneos/{torneo_id}", datos)
+
+
+def eliminar(torneo_id):
+    return api.delete(f"/torneos/{torneo_id}")
+
+
 def cargar_resultado(partido_id, datos):
     return api.post(f"/partidos/{partido_id}/resultado", datos)
 

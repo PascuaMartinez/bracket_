@@ -81,16 +81,37 @@ def cambiar_estado(torneo_id, estado):
 
 
 def eliminar(torneo_id):
+    """Borra el torneo y todo lo que cuelga de él.
+
+    El orden importa: las claves foráneas impiden dejar filas apuntando a
+    algo que ya no existe, así que se borra de las hojas hacia la raíz.
+    Las vidas cuelgan de la participación, la participación del torneo.
+
+    Va todo en una transacción: si fallara a la mitad, el torneo quedaría
+    parcialmente borrado -- sin partidos pero todavía en la lista, o al
+    revés -- y eso es peor que no haberlo borrado.
+    """
     conn = get_connection()
     cursor = conn.cursor()
-    # Los participantes se borran primero: la clave foránea impide dejar
-    # filas apuntando a un torneo que ya no existe.
-    cursor.execute("DELETE FROM torneo_jugador WHERE torneo_id = %s", (torneo_id,))
-    cursor.execute("DELETE FROM torneo WHERE id = %s", (torneo_id,))
-    conn.commit()
-    filas_afectadas = cursor.rowcount
-    cursor.close()
-    conn.close()
+    try:
+        conn.start_transaction()
+        cursor.execute(
+            """DELETE v FROM torneo_jugador_vidas v
+               JOIN torneo_jugador tj ON tj.id = v.torneo_jugador_id
+               WHERE tj.torneo_id = %s""",
+            (torneo_id,),
+        )
+        cursor.execute("DELETE FROM partido WHERE torneo_id = %s", (torneo_id,))
+        cursor.execute("DELETE FROM torneo_jugador WHERE torneo_id = %s", (torneo_id,))
+        cursor.execute("DELETE FROM torneo WHERE id = %s", (torneo_id,))
+        filas_afectadas = cursor.rowcount
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cursor.close()
+        conn.close()
     return filas_afectadas > 0
 
 

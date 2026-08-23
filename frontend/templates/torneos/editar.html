@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Editar torneo · Bracket{% endblock %}
+
+{% block content %}
+<h1 class="titulo-pagina">Editar torneo</h1>
+
+{% if error %}<div class="aviso-error">{{ error }}</div>{% endif %}
+
+<form method="post" class="panel formulario">
+  <div class="campo">
+    <label for="nombre">Nombre</label>
+    <input type="text" id="nombre" name="nombre" required value="{{ torneo.nombre }}">
+  </div>
+
+  <div class="campo">
+    <label for="fecha">Fecha</label>
+    <input type="date" id="fecha" name="fecha" required value="{{ torneo.fecha }}">
+  </div>
+
+  <div class="campo">
+    <label for="lugar">Lugar <span class="tenue">(opcional)</span></label>
+    <input type="text" id="lugar" name="lugar" value="{{ torneo.lugar or '' }}">
+  </div>
+
+  <div class="campo">
+    <label for="descripcion">Descripción <span class="tenue">(opcional)</span></label>
+    <textarea id="descripcion" name="descripcion" rows="3">{{ torneo.descripcion or '' }}</textarea>
+  </div>
+
+  {# El formato y los participantes no aparecen: cambiarlos con partidos
+     ya jugados dejaría el torneo inconsistente con lo que pasó. #}
+  <p class="ayuda">
+    El formato y los participantes no se pueden cambiar: hay partidos que
+    ya se jugaron con esas condiciones. Para corregir eso hay que borrar el
+    torneo y rehacerlo.
+  </p>
+
+  <div class="acciones">
+    <button type="submit" class="boton">Guardar</button>
+    <a class="boton-secundario" href="{{ url_for('torneo.detalle', torneo_id=torneo.id) }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}
