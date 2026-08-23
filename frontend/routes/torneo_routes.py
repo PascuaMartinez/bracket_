@@ -35,8 +35,14 @@ def nuevo():
         # como números.
         "jugadores_ids": [int(j) for j in request.form.getlist("jugadores_ids")],
     }
+    # Cada formato pide datos propios. Se mandan solo los que
+    # corresponden: el backend ignora el resto, pero enviarlos igual
+    # haría más difícil entender qué necesita cada uno.
     if datos["modo"] == "rey_de_la_cancha":
         datos["vidas_iniciales"] = int(request.form.get("vidas_iniciales") or 0)
+    elif datos["modo"] == "grupos_eliminacion":
+        datos["cantidad_grupos"] = int(request.form.get("cantidad_grupos") or 0)
+        datos["cupos_eliminacion"] = int(request.form.get("cupos_eliminacion") or 0)
 
     try:
         creado = torneos.crear(datos)
@@ -53,6 +59,11 @@ def nuevo():
 @torneo_bp.route("/<int:torneo_id>")
 def detalle(torneo_id):
     datos = torneos.detalle_completo(torneo_id)
+    # Los grupos solo existen en un formato: se piden aparte y solo
+    # cuando corresponde, en vez de que todos los torneos paguen una
+    # llamada que casi siempre viene vacía.
+    if datos["torneo"]["modo"] == "grupos_eliminacion":
+        datos["grupos"] = torneos.grupos(torneo_id)
     return render_template("torneos/detalle.html", **datos)
 
 

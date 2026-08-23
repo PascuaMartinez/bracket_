@@ -18,7 +18,38 @@
   </div>
 </div>
 
+{% if grupos %}
+<h2 class="titulo-seccion">Fase de grupos</h2>
+{% for grupo in grupos %}
+<h3 class="subtitulo-grupo">{{ grupo.nombre }}</h3>
+<div class="tabla-contenedor">
+<table class="tabla">
+  <thead>
+    <tr><th>#</th><th>Jugador</th><th>PJ</th><th>PG</th><th>PP</th><th>Pts</th></tr>
+  </thead>
+  <tbody>
+    {% for fila in grupo.tabla %}
+    {# Los que clasificaron van marcados. clasificado en None significa
+       que la fase todavía no terminó, que es distinto de no haber
+       clasificado. #}
+    <tr class="{{ 'fila-clasificado' if fila.clasificado }}">
+      <td class="dato">{{ fila.puesto }}</td>
+      <td>{{ fila.nombre }}{% if fila.clasificado %} <span class="marca-clasificado">clasificó</span>{% endif %}</td>
+      <td class="dato">{{ fila.pj }}</td>
+      <td class="dato">{{ fila.pg }}</td>
+      <td class="dato">{{ fila.pp }}</td>
+      <td class="dato">{{ fila.puntos }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endfor %}
+
+<h2 class="titulo-seccion">Posiciones finales</h2>
+{% else %}
 <h2 class="titulo-seccion">Posiciones</h2>
+{% endif %}
 <div class="tabla-contenedor">
 <table class="tabla">
   <thead>

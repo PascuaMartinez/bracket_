@@ -531,3 +531,27 @@ main { padding: 36px 0 64px; }
 }
 
 .campo textarea:focus { outline: none; border-color: var(--pine); }
+
+/* --- Fase de grupos --- */
+
+.subtitulo-grupo {
+  font-family: var(--font-titulo);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--graphite);
+  margin: 20px 0 8px;
+}
+
+/* Los clasificados se marcan con un fondo suave y una etiqueta. El fondo
+   solo no alcanzaría: quien no distinga bien los colores necesita el
+   texto para saber quién pasó. */
+.fila-clasificado { background: var(--pine-soft); }
+
+.marca-clasificado {
+  font-family: var(--font-dato);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pine);
+  margin-left: 6px;
+}

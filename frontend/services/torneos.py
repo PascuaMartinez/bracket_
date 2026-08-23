@@ -29,6 +29,11 @@ def detalle_completo(torneo_id):
     }
 
 
+def grupos(torneo_id):
+    """Los grupos con su tabla, para el detalle del torneo."""
+    return api.get(f"/torneos/{torneo_id}/grupos")
+
+
 def partido_actual(torneo_id):
     """El próximo partido a jugar, o None si ya se jugaron todos."""
     return api.get(f"/torneos/{torneo_id}/partido-actual")

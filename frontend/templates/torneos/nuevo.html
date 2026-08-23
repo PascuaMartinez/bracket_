@@ -18,15 +18,28 @@
       <option value="todos_contra_todos">Todos contra todos</option>
       <option value="eliminacion">Eliminación directa</option>
       <option value="rey_de_la_cancha">Rey de la cancha</option>
+      <option value="grupos_eliminacion">Grupos + eliminación</option>
     </select>
   </div>
 
-  {# Solo aplica a rey de la cancha, pero se muestra siempre: esconderlo
-     necesitaría JavaScript, y el backend ignora el campo en los otros
-     formatos. #}
+  {# Cada formato pide datos propios. Se muestran todos y se aclara a
+     cuál pertenece cada uno: esconderlos según el formato elegido
+     necesitaría JavaScript, y el backend ignora los que no correspondan. #}
   <div class="campo">
-    <label for="vidas_iniciales">Vidas por jugador <span class="tenue">(solo rey de la cancha)</span></label>
+    <label for="vidas_iniciales">Vidas por jugador <span class="tenue">(rey de la cancha)</span></label>
     <input type="number" id="vidas_iniciales" name="vidas_iniciales" min="1" value="3">
+  </div>
+
+  <div class="campo">
+    <label for="cantidad_grupos">Cantidad de grupos <span class="tenue">(grupos + eliminación)</span></label>
+    <input type="number" id="cantidad_grupos" name="cantidad_grupos" min="2" value="2">
+  </div>
+
+  <div class="campo">
+    <label for="cupos_eliminacion">Cuántos clasifican <span class="tenue">(grupos + eliminación)</span></label>
+    <input type="number" id="cupos_eliminacion" name="cupos_eliminacion" min="2" value="4">
+    <p class="ayuda">En total, contando todos los grupos. Si no se divide
+       parejo, el cupo extra va al grupo más grande.</p>
   </div>
 
   <div class="campo">
