@@ -32,7 +32,8 @@ CREATE TABLE peleador (
 CREATE TABLE torneo (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
-    modo ENUM('todos_contra_todos', 'eliminacion', 'rey_de_la_cancha') NOT NULL,
+    modo ENUM('todos_contra_todos', 'eliminacion', 'rey_de_la_cancha',
+              'grupos_eliminacion') NOT NULL,
     fecha DATE NOT NULL,
     -- El estado es del torneo, no un cálculo sobre sus partidos: un
     -- torneo puede estar planificado sin tener ningún partido todavía,
@@ -42,7 +43,11 @@ CREATE TABLE torneo (
     descripcion TEXT NULL,
     lugar VARCHAR(150) NULL,
     -- Solo para rey de la cancha: con cuántas vidas arranca cada uno.
-    vidas_iniciales INT NULL
+    vidas_iniciales INT NULL,
+    -- Solo para grupos + eliminación: cuántos clasifican en total a la
+    -- fase final. Se guarda el total y no cuántos por grupo porque puede
+    -- no dividirse parejo -- 5 cupos en 2 grupos son 3 y 2.
+    cupos_eliminacion INT NULL
 );
 
 -- La participación de un jugador en un torneo es una entidad, no una
@@ -147,4 +152,28 @@ CREATE TABLE usuario (
     -- sus parámetros ocupa bastante más que la contraseña original.
     password_hash VARCHAR(255) NOT NULL,
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- Los grupos de un torneo de grupos + eliminación.
+CREATE TABLE grupo (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    torneo_id INT NOT NULL,
+    nombre VARCHAR(50) NOT NULL,
+    FOREIGN KEY (torneo_id) REFERENCES torneo(id)
+);
+
+-- A qué grupo le tocó cada participante, y si clasificó.
+--
+-- Cuelga de torneo_jugador y no de jugador porque es un dato de ESA
+-- participación: el mismo jugador puede estar en el grupo A de un torneo
+-- y en el B de otro.
+CREATE TABLE torneo_jugador_grupo (
+    torneo_jugador_id INT NOT NULL,
+    grupo_id INT NOT NULL,
+    -- NULL mientras la fase de grupos no terminó: todavía no se sabe.
+    clasificado BOOLEAN NULL,
+    PRIMARY KEY (torneo_jugador_id, grupo_id),
+    FOREIGN KEY (torneo_jugador_id) REFERENCES torneo_jugador(id),
+    FOREIGN KEY (grupo_id) REFERENCES grupo(id)
 );
