@@ -132,3 +132,19 @@ CREATE TABLE torneo_jugador_vidas (
     orden_eliminacion INT NULL,
     FOREIGN KEY (torneo_jugador_id) REFERENCES torneo_jugador(id)
 );
+
+
+-- Usuarios que pueden modificar datos. Todo lo demás -- ver torneos,
+-- tablas y estadísticas -- es público: la app está pensada para que el
+-- grupo mire los resultados, y pedir cuenta para eso sería un obstáculo
+-- sin motivo.
+CREATE TABLE usuario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_usuario VARCHAR(50) NOT NULL UNIQUE,
+    -- El hash de la contraseña, nunca la contraseña. Si alguien accede a
+    -- la base no puede leer las claves, y tampoco puede el propio dueño
+    -- del sistema. El campo es largo porque un hash moderno con su sal y
+    -- sus parámetros ocupa bastante más que la contraseña original.
+    password_hash VARCHAR(255) NOT NULL,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

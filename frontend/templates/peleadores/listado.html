@@ -7,7 +7,7 @@
     <h1 class="titulo-pagina">Personajes</h1>
     <p class="subtitulo">{{ peleadores | length }} cargado{{ 's' if peleadores | length != 1 }}.</p>
   </div>
-  <a class="boton" href="{{ url_for('peleador.nuevo') }}">Nuevo personaje</a>
+  {% if hay_sesion() %}<a class="boton" href="{{ url_for('peleador.nuevo') }}">Nuevo personaje</a>{% endif %}
 </div>
 
 {% if peleadores %}
@@ -17,13 +17,15 @@
     {% for p in peleadores %}
     <tr>
       <td>{{ p.nombre }}</td>
-      <td class="celda-acciones">
+      {% if hay_sesion() %}
+<td class="celda-acciones">
         <a href="{{ url_for('peleador.editar', peleador_id=p.id) }}">Editar</a>
         <form method="post" action="{{ url_for('peleador.eliminar', peleador_id=p.id) }}"
               onsubmit="return confirm('¿Eliminar {{ p.nombre }}?')">
           <button type="submit" class="enlace-peligro">Eliminar</button>
         </form>
       </td>
+{% endif %}
     </tr>
     {% endfor %}
   </tbody>

@@ -1,4 +1,5 @@
 """Pantallas de jugadores."""
+import auth
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from services import api
@@ -12,6 +13,7 @@ def listado():
 
 
 @jugador_bp.route("/nuevo", methods=["GET", "POST"])
+@auth.requiere_sesion
 def nuevo():
     if request.method == "GET":
         return render_template("jugadores/formulario.html", jugador=None, error=None)
@@ -29,6 +31,7 @@ def nuevo():
 
 
 @jugador_bp.route("/<int:jugador_id>/editar", methods=["GET", "POST"])
+@auth.requiere_sesion
 def editar(jugador_id):
     if request.method == "GET":
         return render_template("jugadores/formulario.html",
@@ -44,6 +47,7 @@ def editar(jugador_id):
 
 
 @jugador_bp.route("/<int:jugador_id>/eliminar", methods=["POST"])
+@auth.requiere_sesion
 def eliminar(jugador_id):
     """Solo por POST y nunca por GET: un enlace que borra puede
     dispararse solo si algo precarga la página."""

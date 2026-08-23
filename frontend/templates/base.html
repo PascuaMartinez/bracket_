@@ -20,6 +20,16 @@
         <a href="{{ url_for('jugador.listado') }}">Jugadores</a>
         <a href="{{ url_for('peleador.listado') }}">Personajes</a>
       </nav>
+      <div class="sesion">
+        {% if hay_sesion() %}
+        <span class="tenue">{{ usuario_actual() }}</span>
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          <button type="submit" class="enlace-boton">Salir</button>
+        </form>
+        {% else %}
+        <a href="{{ url_for('auth.login') }}">Entrar</a>
+        {% endif %}
+      </div>
     </div>
   </header>
 

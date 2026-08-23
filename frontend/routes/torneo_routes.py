@@ -1,4 +1,5 @@
 """Pantallas de torneos."""
+import auth
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from services import api, torneos
@@ -17,6 +18,7 @@ def historial():
 
 
 @torneo_bp.route("/nuevo", methods=["GET", "POST"])
+@auth.requiere_sesion
 def nuevo():
     jugadores = api.get("/jugadores")
 
@@ -55,6 +57,7 @@ def detalle(torneo_id):
 
 
 @torneo_bp.route("/<int:torneo_id>/jugar", methods=["GET", "POST"])
+@auth.requiere_sesion
 def jugar(torneo_id):
     """La pantalla que se usa durante el torneo: muestra el partido en
     curso y recibe el resultado."""

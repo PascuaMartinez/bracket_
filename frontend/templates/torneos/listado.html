@@ -7,7 +7,7 @@
     <h1 class="titulo-pagina">Torneos</h1>
     <p class="subtitulo">{{ torneos | length }} en total.</p>
   </div>
-  <a class="boton" href="{{ url_for('torneo.nuevo') }}">Nuevo torneo</a>
+  {% if hay_sesion() %}<a class="boton" href="{{ url_for('torneo.nuevo') }}">Nuevo torneo</a>{% endif %}
 </div>
 
 {% if torneos %}

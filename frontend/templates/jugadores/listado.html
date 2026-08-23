@@ -7,7 +7,7 @@
     <h1 class="titulo-pagina">Jugadores</h1>
     <p class="subtitulo">{{ jugadores | length }} registrado{{ 's' if jugadores | length != 1 }}.</p>
   </div>
-  <a class="boton" href="{{ url_for('jugador.nuevo') }}">Nuevo jugador</a>
+  {% if hay_sesion() %}<a class="boton" href="{{ url_for('jugador.nuevo') }}">Nuevo jugador</a>{% endif %}
 </div>
 
 {% if jugadores %}

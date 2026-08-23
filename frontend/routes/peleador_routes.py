@@ -1,4 +1,5 @@
 """Pantallas de personajes."""
+import auth
 from flask import Blueprint, redirect, render_template, request, url_for
 
 from services import api
@@ -12,6 +13,7 @@ def listado():
 
 
 @peleador_bp.route("/nuevo", methods=["GET", "POST"])
+@auth.requiere_sesion
 def nuevo():
     if request.method == "GET":
         return render_template("peleadores/formulario.html", peleador=None, error=None)
@@ -28,6 +30,7 @@ def nuevo():
 
 
 @peleador_bp.route("/<int:peleador_id>/editar", methods=["GET", "POST"])
+@auth.requiere_sesion
 def editar(peleador_id):
     if request.method == "GET":
         return render_template("peleadores/formulario.html",
@@ -43,6 +46,7 @@ def editar(peleador_id):
 
 
 @peleador_bp.route("/<int:peleador_id>/eliminar", methods=["POST"])
+@auth.requiere_sesion
 def eliminar(peleador_id):
     api.delete(f"/peleadores/{peleador_id}")
     return redirect(url_for("peleador.listado"))

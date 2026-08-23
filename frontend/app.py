@@ -1,6 +1,8 @@
 from flask import Flask
 
+import auth
 from config import Config
+from routes.auth_routes import auth_bp
 from routes.inicio_routes import inicio_bp
 from routes.jugador_routes import jugador_bp
 from routes.peleador_routes import peleador_bp
@@ -20,6 +22,12 @@ NOMBRES_DE_FORMATO = {
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    # Disponible en todas las plantillas: los botones de crear y editar
+    # solo se muestran con sesión iniciada. No es la protección -- esa
+    # está en las rutas -- sino no ofrecer acciones que van a rebotar.
+    app.jinja_env.globals["hay_sesion"] = auth.hay_sesion
+    app.jinja_env.globals["usuario_actual"] = auth.usuario_actual
 
     @app.template_filter("nombre_formato")
     def nombre_formato(valor):
@@ -47,6 +55,7 @@ def create_app():
                 return j["nombre"]
         return "?"
 
+    app.register_blueprint(auth_bp)
     app.register_blueprint(inicio_bp)
     app.register_blueprint(jugador_bp)
     app.register_blueprint(peleador_bp)

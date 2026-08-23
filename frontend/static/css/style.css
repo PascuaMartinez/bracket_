@@ -494,3 +494,27 @@ main { padding: 36px 0 64px; }
   color: var(--graphite);
   margin: 2px 0 0;
 }
+
+/* --- Estado de sesión en el encabezado --- */
+
+.sesion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.sesion form { margin: 0; }
+
+.enlace-boton {
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: var(--font-texto);
+  font-size: 14px;
+  color: var(--pine);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.ver-password { font-size: 13px; color: var(--graphite); font-weight: 400; }

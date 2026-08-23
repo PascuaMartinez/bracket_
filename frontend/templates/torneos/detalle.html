@@ -8,7 +8,7 @@
     <h1 class="titulo-pagina">{{ torneo.nombre }}</h1>
     {% if torneo.descripcion %}<p class="subtitulo">{{ torneo.descripcion }}</p>{% endif %}
   </div>
-  {% if torneo.estado != 'finalizado' %}
+  {% if torneo.estado != 'finalizado' and hay_sesion() %}
   <a class="boton" href="{{ url_for('torneo.jugar', torneo_id=torneo.id) }}">Cargar resultado</a>
   {% endif %}
 </div>

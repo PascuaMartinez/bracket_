@@ -78,6 +78,21 @@ externo (el armado del fixture) se prueba directo, y la que lee datos se
 prueba sustituyendo los repositorios. Eso es posible porque el acceso a
 datos está aislado en su propia capa.
 
+## Usuarios
+
+Ver es público: cualquiera puede mirar torneos, tablas y estadísticas sin
+cuenta. Crear y modificar necesita sesión.
+
+El primer usuario se crea desde la máquina donde corre el proyecto:
+
+```bash
+source venv/bin/activate
+cd backend && python crear_usuario.py
+```
+
+Va como script y no como pantalla a propósito: un formulario público para
+crear administradores le permitiría a cualquiera darse de alta.
+
 ## Estado
 
 En desarrollo. Este README se actualiza a medida que el proyecto avanza.

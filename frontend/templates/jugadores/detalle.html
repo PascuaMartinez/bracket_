@@ -4,7 +4,7 @@
 {% block content %}
 <div class="fila-titulo">
   <h1 class="titulo-pagina">{{ jugador.nombre }}</h1>
-  <a class="boton-secundario" href="{{ url_for('jugador.editar', jugador_id=jugador.id) }}">Editar</a>
+  {% if hay_sesion() %}<a class="boton-secundario" href="{{ url_for('jugador.editar', jugador_id=jugador.id) }}">Editar</a>{% endif %}
 </div>
 
 {% if estadisticas.partidos_jugados %}
@@ -52,8 +52,10 @@
 <div class="vacio"><p>Todavía no jugó ningún partido.</p></div>
 {% endif %}
 
+{% if hay_sesion() %}
 <form method="post" action="{{ url_for('jugador.eliminar', jugador_id=jugador.id) }}"
       onsubmit="return confirm('¿Eliminar a {{ jugador.nombre }}? No se puede deshacer.')">
   <button type="submit" class="boton-peligro">Eliminar jugador</button>
 </form>
+{% endif %}
 {% endblock %}
