@@ -6,7 +6,9 @@ obligaría a mantenerla sincronizada cada vez que se carga o se corrige un
 resultado, y cualquier olvido dejaría la tabla mintiendo. Calcularla al
 momento es más lento pero no puede quedar desactualizada.
 """
-from repositories import partido_repository, torneo_repository, vidas_repository
+from repositories import (
+    grupo_repository, partido_repository, torneo_repository, vidas_repository,
+)
 from services import rey_de_la_cancha_service
 
 
@@ -30,6 +32,11 @@ def calcular_tabla(torneo_id):
         return _tabla_eliminacion(torneo_id)
     if torneo.modo == "rey_de_la_cancha":
         return _tabla_rey_de_la_cancha(torneo_id)
+    if torneo.modo == "grupos_eliminacion":
+        # La tabla general del torneo sale del cuadro: quién llegó más
+        # lejos. Las tablas por grupo son de la fase previa y se consultan
+        # aparte.
+        return _tabla_eliminacion(torneo_id)
     return _tabla_todos_contra_todos(torneo_id)
 
 
@@ -205,3 +212,48 @@ def _tabla_rey_de_la_cancha(torneo_id):
         fila["win_rate"] = round(fila["pg"] / fila["pj"], 3) if fila["pj"] else 0
 
     return tabla
+
+
+def calcular_tabla_de_grupo(torneo_id, grupo_id):
+    """
+    Tabla de un grupo puntual.
+
+    Es la misma lógica que todos contra todos, pero mirando solo a los
+    jugadores del grupo y los partidos entre ellos. De acá salen los
+    clasificados.
+    """
+    jugadores = grupo_repository.obtener_jugadores(grupo_id)
+    ids_del_grupo = {j["jugador_id"] for j in jugadores}
+
+    filas = {
+        j["jugador_id"]: {
+            "jugador_id": j["jugador_id"], "nombre": j["nombre"],
+            "pj": 0, "pg": 0, "pp": 0, "puntos": 0,
+        }
+        for j in jugadores
+    }
+
+    for partido in partido_repository.obtener_por_torneo(torneo_id):
+        # Solo los de la fase de grupos (ronda None) y entre jugadores de
+        # ESTE grupo: los del cuadro no cuentan para la tabla del grupo.
+        if partido.ronda is not None or partido.estado != "finalizado":
+            continue
+        if partido.jugador1_id not in ids_del_grupo:
+            continue
+
+        perdedor_id = (
+            partido.jugador2_id if partido.ganador_id == partido.jugador1_id
+            else partido.jugador1_id
+        )
+        filas[partido.ganador_id]["pj"] += 1
+        filas[partido.ganador_id]["pg"] += 1
+        filas[partido.ganador_id]["puntos"] += 1
+        filas[perdedor_id]["pj"] += 1
+        filas[perdedor_id]["pp"] += 1
+
+    for fila in filas.values():
+        fila["win_rate"] = round(fila["pg"] / fila["pj"], 3) if fila["pj"] else 0
+
+    ordenadas = sorted(filas.values(), key=lambda f: (-f["puntos"], -f["win_rate"]))
+    _asignar_puestos(ordenadas)
+    return ordenadas

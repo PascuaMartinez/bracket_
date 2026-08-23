@@ -4,8 +4,10 @@ Reglas de negocio de partidos.
 Dos responsabilidades: armar el fixture cuando arranca un torneo, y
 registrar resultados a medida que se juegan.
 """
-from repositories import partido_repository, torneo_repository, vidas_repository
-from services import bracket_service, fixture_service
+from repositories import (
+    grupo_repository, partido_repository, torneo_repository, vidas_repository,
+)
+from services import bracket_service, fixture_service, grupos_service
 
 
 class PartidoNoEncontradoError(Exception):
@@ -16,7 +18,8 @@ class ResultadoInvalidoError(Exception):
     pass
 
 
-def generar_fixture(torneo_id, modo, jugadores_ids, vidas_iniciales=None):
+def generar_fixture(torneo_id, modo, jugadores_ids, vidas_iniciales=None,
+                    cantidad_grupos=None):
     """
     Arma los partidos iniciales del torneo y lo pasa a 'en curso'.
 
@@ -35,6 +38,8 @@ def generar_fixture(torneo_id, modo, jugadores_ids, vidas_iniciales=None):
         return _generar_eliminacion(torneo_id, jugadores_ids)
     if modo == "rey_de_la_cancha":
         return _generar_rey_de_la_cancha(torneo_id, jugadores_ids, vidas_iniciales)
+    if modo == "grupos_eliminacion":
+        return _generar_grupos(torneo_id, jugadores_ids, cantidad_grupos)
     return _generar_todos_contra_todos(torneo_id, jugadores_ids)
 
 
@@ -106,6 +111,8 @@ def cargar_resultado(partido_id, ganador_id, peleador1_id=None,
     torneo = torneo_repository.obtener_por_id(partido.torneo_id)
     if torneo.modo == "rey_de_la_cancha":
         _avanzar_cola(partido, ganador_id)
+    elif torneo.modo == "grupos_eliminacion":
+        _avanzar_grupos_eliminacion(torneo, partido)
     elif partido.ronda is not None:
         _avanzar_bracket(partido.torneo_id, partido.ronda)
 
@@ -274,3 +281,122 @@ def _proximo_en_la_cola(estado, en_cancha_id):
     if not esperando:
         return None
     return min(esperando, key=lambda j: j["posicion_cola"] or 0)
+
+
+def _generar_grupos(torneo_id, jugadores_ids, cantidad_grupos):
+    """
+    Arma los grupos y todos sus partidos.
+
+    Dentro de cada grupo se juega todos contra todos, así que el fixture
+    de la fase de grupos sale completo. El cuadro de eliminación no: quién
+    lo juega depende de quién clasifique.
+    """
+    repartidos = grupos_service.repartir_en_grupos(jugadores_ids, cantidad_grupos)
+
+    partidos = []
+    orden = 1
+    for indice, jugadores_del_grupo in enumerate(repartidos):
+        grupo_id = grupo_repository.crear(
+            torneo_id, grupos_service.nombre_de_grupo(indice)
+        )
+        grupo_repository.asignar_jugadores(torneo_id, grupo_id, jugadores_del_grupo)
+
+        for jornada in fixture_service.fixture_round_robin(jugadores_del_grupo):
+            for jugador1, jugador2 in jornada:
+                partidos.append({
+                    "torneo_id": torneo_id,
+                    "jugador1_id": jugador1,
+                    "jugador2_id": jugador2,
+                    "orden": orden,
+                    "jornada": None,
+                    # ronda None marca que es de la fase de grupos; el
+                    # cuadro usa ronda 1, 2, 3...
+                    "ronda": None,
+                    "es_pase_libre": False,
+                    "ganador_id": None,
+                    "estado": "pendiente",
+                })
+                orden += 1
+
+    partido_repository.crear_muchos(partidos, con_ronda=True)
+    torneo_repository.cambiar_estado(torneo_id, "en_curso")
+    return len(partidos)
+
+
+def _avanzar_grupos_eliminacion(torneo, partido):
+    """
+    Decide qué hacer después de un partido: si fue de grupos y ya
+    terminaron todos, calcula clasificados y arranca el cuadro. Si fue del
+    cuadro, avanza la ronda.
+    """
+    if partido.ronda is not None:
+        _avanzar_bracket(torneo.id, partido.ronda)
+        return
+
+    # Los grupos terminan en momentos distintos, y el cuadro no puede
+    # arrancar hasta que terminen TODOS: sembrar con la mitad de los
+    # clasificados armaría un cuadro incompleto.
+    if _quedan_partidos_de_grupos(torneo.id):
+        return
+
+    _cerrar_fase_de_grupos(torneo)
+
+
+def _quedan_partidos_de_grupos(torneo_id):
+    return any(
+        p.ronda is None and p.estado != "finalizado"
+        for p in partido_repository.obtener_por_torneo(torneo_id)
+    )
+
+
+def _cerrar_fase_de_grupos(torneo):
+    """Calcula quién clasifica de cada grupo y genera la primera ronda."""
+    from services import tabla_service
+
+    grupos = grupo_repository.obtener_por_torneo(torneo.id)
+    tamanos = [len(grupo_repository.obtener_jugadores(g["id"])) for g in grupos]
+    cupos = grupos_service.repartir_cupos(torneo.cupos_eliminacion, tamanos)
+
+    clasificados = []
+    for grupo, cupos_del_grupo in zip(grupos, cupos):
+        tabla = tabla_service.calcular_tabla_de_grupo(torneo.id, grupo["id"])
+        pasan = [f["jugador_id"] for f in tabla[:cupos_del_grupo]]
+        grupo_repository.marcar_clasificados(grupo["id"], pasan)
+        clasificados.append(pasan)
+
+    # Se intercalan los grupos al sembrar: primero de A, primero de B,
+    # segundo de A, segundo de B. Así los que ganaron su grupo no se
+    # cruzan entre sí en la primera ronda del cuadro.
+    sembrados = _intercalar(clasificados)
+
+    cruces = bracket_service.sembrar_primera_ronda(sembrados)
+    orden = partido_repository.obtener_max_orden(torneo.id)
+    partidos = []
+    for jugador1, jugador2 in cruces:
+        orden += 1
+        es_pase_libre = jugador2 is None
+        partidos.append({
+            "torneo_id": torneo.id,
+            "jugador1_id": jugador1,
+            "jugador2_id": jugador2,
+            "orden": orden,
+            "jornada": None,
+            "ronda": 1,
+            "es_pase_libre": es_pase_libre,
+            "ganador_id": jugador1 if es_pase_libre else None,
+            "estado": "finalizado" if es_pase_libre else "pendiente",
+        })
+    partido_repository.crear_muchos(partidos, con_ronda=True)
+
+
+def _intercalar(listas):
+    """Toma el primero de cada lista, después el segundo de cada una, etc.
+
+    Es lo que evita que dos primeros de grupo se enfrenten de entrada: al
+    intercalar, quedan en extremos opuestos del cuadro."""
+    resultado = []
+    for posicion in range(max((len(l) for l in listas), default=0)):
+        for lista in listas:
+            if posicion < len(lista):
+                resultado.append(lista[posicion])
+    return resultado
