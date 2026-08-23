@@ -143,3 +143,32 @@ def obtener_participantes(torneo_id):
     cursor.close()
     conn.close()
     return filas
+
+
+def obtener_participantes_de_varios(torneos_ids):
+    """Los participantes de varios torneos en una sola consulta.
+
+    Mismo motivo que su equivalente en partidos: recorrer torneos pidiendo
+    los participantes de a uno multiplica las idas a la base."""
+    if not torneos_ids:
+        return {}
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    marcadores = ",".join(["%s"] * len(torneos_ids))
+    cursor.execute(
+        f"""SELECT tj.torneo_id, tj.id AS torneo_jugador_id,
+                   j.id AS jugador_id, j.nombre
+            FROM torneo_jugador tj
+            JOIN jugador j ON j.id = tj.jugador_id
+            WHERE tj.torneo_id IN ({marcadores})
+            ORDER BY j.nombre ASC""",
+        list(torneos_ids),
+    )
+    filas = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    por_torneo = {torneo_id: [] for torneo_id in torneos_ids}
+    for fila in filas:
+        por_torneo[fila["torneo_id"]].append(fila)
+    return por_torneo

@@ -16,9 +16,16 @@ def fila(jugador_id, nombre, puesto, pj=0, pg=0, pp=0):
 
 
 def calcular(torneos, tablas_por_torneo):
+    """Las consultas agrupadas se sustituyen igual que las demás: lo que
+    se prueba acá es cómo se acumulan los puntos, no de dónde salen los
+    datos."""
     with patch.object(historica.torneo_repository, "obtener_todos", return_value=torneos), \
+         patch.object(historica.torneo_repository, "obtener_participantes_de_varios",
+                      return_value={}), \
+         patch.object(historica.partido_repository, "obtener_de_varios_torneos",
+                      return_value={}), \
          patch.object(historica.tabla_service, "calcular_tabla",
-                      side_effect=lambda tid: tablas_por_torneo[tid]):
+                      side_effect=lambda tid, **kwargs: tablas_por_torneo[tid]):
         return historica.calcular_tabla_historica()
 
 

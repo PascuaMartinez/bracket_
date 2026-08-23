@@ -12,9 +12,15 @@ from repositories import (
 from services import rey_de_la_cancha_service
 
 
-def calcular_tabla(torneo_id):
+def calcular_tabla(torneo_id, torneo=None, participantes=None, partidos=None):
     """
     Tabla de posiciones de un torneo, sea cual sea su formato.
+
+    Los tres últimos parámetros son opcionales y sirven para pasarle datos
+    ya traídos. Sin ellos consulta la base por su cuenta, que es lo normal
+    cuando se pide la tabla de un torneo puntual. Con ellos, quien recorre
+    muchos torneos puede traer todo de una vez y evitar que cada uno haga
+    sus propias consultas.
 
     Cada formato define el puesto a su manera y no hay uno que sirva para
     los tres: en todos contra todos ordena quién ganó más partidos, en
@@ -24,26 +30,26 @@ def calcular_tabla(torneo_id):
     permite que el acumulado histórico las trate a todas igual sin saber
     de qué formato vienen.
     """
-    torneo = torneo_repository.obtener_por_id(torneo_id)
+    if torneo is None:
+        torneo = torneo_repository.obtener_por_id(torneo_id)
     if torneo is None:
         return []
 
-    if torneo.modo == "eliminacion":
-        return _tabla_eliminacion(torneo_id)
+    if torneo.modo in ("eliminacion", "grupos_eliminacion"):
+        # La tabla general sale del cuadro: quién llegó más lejos. Las
+        # tablas por grupo son de la fase previa y se consultan aparte.
+        return _tabla_eliminacion(torneo_id, participantes, partidos)
     if torneo.modo == "rey_de_la_cancha":
-        return _tabla_rey_de_la_cancha(torneo_id)
-    if torneo.modo == "grupos_eliminacion":
-        # La tabla general del torneo sale del cuadro: quién llegó más
-        # lejos. Las tablas por grupo son de la fase previa y se consultan
-        # aparte.
-        return _tabla_eliminacion(torneo_id)
-    return _tabla_todos_contra_todos(torneo_id)
+        return _tabla_rey_de_la_cancha(torneo_id, partidos)
+    return _tabla_todos_contra_todos(torneo_id, participantes, partidos)
 
 
-def _tabla_todos_contra_todos(torneo_id):
+def _tabla_todos_contra_todos(torneo_id, participantes=None, partidos=None):
     """Ordena por partidos ganados."""
-    participantes = torneo_repository.obtener_participantes(torneo_id)
-    partidos = partido_repository.obtener_por_torneo(torneo_id)
+    if participantes is None:
+        participantes = torneo_repository.obtener_participantes(torneo_id)
+    if partidos is None:
+        partidos = partido_repository.obtener_por_torneo(torneo_id)
 
     # Arranca con todos en cero: un jugador que todavía no jugó tiene que
     # aparecer en la tabla igual, no ausente hasta que gane algo.
@@ -103,7 +109,7 @@ def _asignar_puestos(filas_ordenadas):
         fila["puesto"] = puesto_actual
 
 
-def _tabla_eliminacion(torneo_id):
+def _tabla_eliminacion(torneo_id, participantes=None, partidos=None):
     """
     Ordena por hasta dónde llegó cada uno en el cuadro.
 
@@ -114,8 +120,10 @@ def _tabla_eliminacion(torneo_id):
     semifinalistas eliminados fue "mejor" sería inventar una comparación
     que el torneo nunca hizo.
     """
-    participantes = torneo_repository.obtener_participantes(torneo_id)
-    partidos = partido_repository.obtener_por_torneo(torneo_id)
+    if participantes is None:
+        participantes = torneo_repository.obtener_participantes(torneo_id)
+    if partidos is None:
+        partidos = partido_repository.obtener_por_torneo(torneo_id)
 
     filas = {
         p["jugador_id"]: {
@@ -171,12 +179,13 @@ def _tabla_eliminacion(torneo_id):
     return ordenadas
 
 
-def _tabla_rey_de_la_cancha(torneo_id):
+def _tabla_rey_de_la_cancha(torneo_id, partidos=None):
     """Delega en la fórmula propia del formato (racha² + qué tan lejos
     llegó), y le agrega el récord de partidos que el resto del sistema
     espera encontrar en toda tabla."""
     estado = vidas_repository.obtener_estado(torneo_id)
-    partidos = partido_repository.obtener_por_torneo(torneo_id)
+    if partidos is None:
+        partidos = partido_repository.obtener_por_torneo(torneo_id)
 
     resultados_por_jugador = {j["jugador_id"]: [] for j in estado}
     record = {j["jugador_id"]: {"pj": 0, "pg": 0, "pp": 0} for j in estado}

@@ -40,10 +40,22 @@ def calcular_tabla_historica():
     # tiempo, así que el orden importa.
     torneos.sort(key=lambda t: (t.fecha, t.id))
 
+    # Todo de una vez, en dos consultas, en vez de tres por cada torneo.
+    # Antes esto crecía con la cantidad de torneos: con 20 eran 61
+    # consultas. Ahora son 3, tenga los torneos que tenga.
+    ids = [t.id for t in torneos]
+    participantes_por_torneo = torneo_repository.obtener_participantes_de_varios(ids)
+    partidos_por_torneo = partido_repository.obtener_de_varios_torneos(ids)
+
     acumulado = {}
 
     for torneo in torneos:
-        tabla = tabla_service.calcular_tabla(torneo.id)
+        tabla = tabla_service.calcular_tabla(
+            torneo.id,
+            torneo=torneo,
+            participantes=participantes_por_torneo.get(torneo.id, []),
+            partidos=partidos_por_torneo.get(torneo.id, []),
+        )
         for fila in tabla:
             jugador = acumulado.setdefault(fila["jugador_id"], {
                 "jugador_id": fila["jugador_id"],

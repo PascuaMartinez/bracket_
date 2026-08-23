@@ -122,3 +122,30 @@ def obtener_max_orden(torneo_id):
     cursor.close()
     conn.close()
     return maximo
+
+
+def obtener_de_varios_torneos(torneos_ids):
+    """
+    Los partidos de varios torneos en una sola consulta.
+
+    Devuelve {torneo_id: [partidos]}. Existe para no pedir los partidos
+    torneo por torneo cuando hay que recorrerlos todos: con 20 torneos,
+    eso es la diferencia entre 20 idas a la base y una.
+    """
+    if not torneos_ids:
+        return {}
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    marcadores = ",".join(["%s"] * len(torneos_ids))
+    cursor.execute(
+        f"SELECT * FROM partido WHERE torneo_id IN ({marcadores}) ORDER BY orden ASC",
+        list(torneos_ids),
+    )
+    filas = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    por_torneo = {torneo_id: [] for torneo_id in torneos_ids}
+    for fila in filas:
+        por_torneo[fila["torneo_id"]].append(Partido.from_row(fila))
+    return por_torneo
