@@ -16,7 +16,7 @@
   <tbody>
     {% for p in peleadores %}
     <tr>
-      <td>{{ p.nombre }}</td>
+      <td><a href="{{ url_for('peleador.detalle', peleador_id=p.id) }}">{{ p.nombre }}</a></td>
       {% if hay_sesion() %}
 <td class="celda-acciones">
         <a href="{{ url_for('peleador.editar', peleador_id=p.id) }}">Editar</a>

@@ -12,6 +12,15 @@ def listado():
     return render_template("peleadores/listado.html", peleadores=api.get("/peleadores"))
 
 
+@peleador_bp.route("/<int:peleador_id>")
+def detalle(peleador_id):
+    return render_template(
+        "peleadores/detalle.html",
+        peleador=api.get(f"/peleadores/{peleador_id}"),
+        estadisticas=api.get(f"/peleadores/{peleador_id}/estadisticas"),
+    )
+
+
 @peleador_bp.route("/nuevo", methods=["GET", "POST"])
 @auth.requiere_sesion
 def nuevo():

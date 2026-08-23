@@ -43,6 +43,17 @@ def create_app():
             return "—"
         return ", ".join(f"{r['nombre']} ({r[campo]})" for r in lista)
 
+    @app.template_filter("nombres_con_record")
+    def nombres_con_record(lista):
+        """Muestra rivales con su récord: 'Ky (2-5)'. El récord importa
+        porque sin él, saber que alguien es 'el peor enemigo' no dice qué
+        tan mal le fue."""
+        if not lista:
+            return "—"
+        return ", ".join(
+            f"{r['nombre']} ({r['ganados']}-{r['perdidos']})" for r in lista
+        )
+
     @app.template_filter("nombre_jugador")
     def nombre_jugador(jugador_id):
         """Los partidos vienen con ids, no con nombres. Se resuelve acá y

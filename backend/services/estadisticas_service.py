@@ -84,7 +84,44 @@ def _rivales(partidos, jugador_id, nombres):
         "rival_mas_frecuente": _todos_los_maximos(rivales, lambda r: r["jugados"]),
         "a_quien_le_gano_mas": _todos_los_maximos(rivales, lambda r: r["ganados"]),
         "contra_quien_perdio_mas": _todos_los_maximos(rivales, lambda r: r["perdidos"]),
+        "matchup_mas_parejo": _matchup_mas_parejo(rivales),
     }
+
+
+# Para hablar de una rivalidad pareja hace falta un mínimo de partidos:
+# con uno o dos, el resultado es azar y no una tendencia.
+MINIMO_PARTIDOS_PARA_MATCHUP = 3
+
+
+def _matchup_mas_parejo(rivales):
+    """
+    Contra qué rival la cosa está más pareja.
+
+    Lo intuitivo sería medir la diferencia entre ganados y perdidos, pero
+    eso da resultados equivocados: un 0-3 tiene diferencia 3 y un 4-6
+    tiene diferencia 2, así que el 0-3 -- que es una paliza -- ganaría
+    contra el 4-6, que es una rivalidad genuinamente pareja.
+
+    El problema es que la diferencia bruta ignora cuántos partidos se
+    jugaron. Lo que corresponde medir es qué tan cerca del 50% está el
+    win rate: 0-3 da 0% (lejísimos) y 4-6 da 40% (cerca), que es lo que
+    uno espera leer ahí.
+
+    Ante igual cercanía al 50%, gana el que jugó más partidos: un 5-5
+    dice más de una rivalidad pareja que un 1-1.
+    """
+    candidatos = [r for r in rivales if r["jugados"] >= MINIMO_PARTIDOS_PARA_MATCHUP]
+    if not candidatos:
+        return []
+
+    def distancia_al_medio(rival):
+        return abs(rival["win_rate"] - 0.5)
+
+    mas_cercano = min(distancia_al_medio(r) for r in candidatos)
+    empatados = [r for r in candidatos if distancia_al_medio(r) == mas_cercano]
+
+    max_jugados = max(r["jugados"] for r in empatados)
+    return [r for r in empatados if r["jugados"] == max_jugados]
 
 
 def _mejor_racha(partidos, jugador_id):

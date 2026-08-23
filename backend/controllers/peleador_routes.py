@@ -1,7 +1,7 @@
 """Endpoints de personajes."""
 from flask import Blueprint, jsonify, request
 
-from services import peleador_service
+from services import estadisticas_peleador_service, peleador_service
 
 peleador_bp = Blueprint("peleador", __name__, url_prefix="/peleadores")
 
@@ -16,6 +16,16 @@ def obtener(peleador_id):
     try:
         return jsonify(peleador_service.obtener_peleador(peleador_id)), 200
     except peleador_service.PeleadorNoEncontradoError as e:
+        return jsonify({"error": str(e)}), 404
+
+
+@peleador_bp.route("/<int:peleador_id>/estadisticas", methods=["GET"])
+def estadisticas(peleador_id):
+    try:
+        return jsonify(
+            estadisticas_peleador_service.obtener_estadisticas(peleador_id)
+        ), 200
+    except estadisticas_peleador_service.PeleadorNoEncontradoError as e:
         return jsonify({"error": str(e)}), 404
 
 
