@@ -1,0 +1,18 @@
+{# Las flechas de navegación. Se incluye desde cada detalle pasándole a
+   dónde van, para no repetir el mismo bloque en tres plantillas. #}
+{% if anterior or siguiente %}
+<nav class="flechas">
+  {% if anterior %}
+  <a class="flecha flecha-anterior" href="{{ url_anterior }}" title="{{ anterior.nombre }}">
+    <span class="flecha-simbolo">‹</span>
+    <span class="flecha-nombre">{{ anterior.nombre }}</span>
+  </a>
+  {% endif %}
+  {% if siguiente %}
+  <a class="flecha flecha-siguiente" href="{{ url_siguiente }}" title="{{ siguiente.nombre }}">
+    <span class="flecha-nombre">{{ siguiente.nombre }}</span>
+    <span class="flecha-simbolo">›</span>
+  </a>
+  {% endif %}
+</nav>
+{% endif %}

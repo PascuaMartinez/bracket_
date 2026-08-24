@@ -2,6 +2,11 @@
 {% block title %}{{ jugador.nombre }} · Bracket{% endblock %}
 
 {% block content %}
+{% with url_anterior=url_for("jugador.detalle", jugador_id=anterior.id) if anterior else None,
+        url_siguiente=url_for("jugador.detalle", jugador_id=siguiente.id) if siguiente else None %}
+{% include "_navegacion.html" %}
+{% endwith %}
+
 <div class="fila-titulo">
   <div class="titulo-con-foto">
     {% if jugador.imagen_vertical %}

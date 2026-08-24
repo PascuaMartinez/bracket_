@@ -2,6 +2,11 @@
 {% block title %}{{ torneo.nombre }} · Bracket{% endblock %}
 
 {% block content %}
+{% with url_anterior=url_for("torneo.detalle", torneo_id=anterior.id) if anterior else None,
+        url_siguiente=url_for("torneo.detalle", torneo_id=siguiente.id) if siguiente else None %}
+{% include "_navegacion.html" %}
+{% endwith %}
+
 <div class="fila-titulo">
   <div>
     <p class="dato-tenue">{{ torneo.modo | nombre_formato }} · {{ torneo.fecha }}{% if torneo.lugar %} · {{ torneo.lugar }}{% endif %}</p>

@@ -2,7 +2,7 @@
 import auth
 from flask import Blueprint, redirect, render_template, request, url_for
 
-from services import api, torneos
+from services import api, navegacion, torneos
 
 torneo_bp = Blueprint("torneo", __name__, url_prefix="/torneos")
 
@@ -64,6 +64,13 @@ def detalle(torneo_id):
     # llamada que casi siempre viene vacía.
     if datos["torneo"]["modo"] == "grupos_eliminacion":
         datos["grupos"] = torneos.grupos(torneo_id)
+
+    # Los torneos vienen del más nuevo al más viejo, así que "siguiente"
+    # lleva a uno más viejo. Se invierten para que la flecha derecha
+    # avance en el tiempo, que es lo que uno espera al recorrerlos.
+    anterior, siguiente = navegacion.vecinos(torneos.listar(), torneo_id)
+    datos["anterior"], datos["siguiente"] = siguiente, anterior
+
     return render_template("torneos/detalle.html", **datos)
 
 

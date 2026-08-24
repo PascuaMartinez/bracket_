@@ -640,3 +640,42 @@ main { padding: 36px 0 64px; }
   justify-content: center;
   margin-top: 8px;
 }
+
+/* --- Flechas de navegación ---
+   Van arriba del contenido y a los costados: es donde se las busca, y no
+   compiten con las acciones de la página. */
+
+.flechas {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  min-height: 32px;
+}
+
+/* Cuando solo hay una, igual queda en su lado: sin esto, una flecha
+   "siguiente" sola se iría a la izquierda. */
+.flecha-siguiente:only-child { margin-left: auto; }
+
+.flecha {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--graphite);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.flecha:hover { border-color: var(--pine); color: var(--pine); }
+
+.flecha-simbolo { font-size: 17px; line-height: 1; }
+
+/* El nombre del destino se esconde en pantallas chicas: la flecha sola
+   ya dice qué hace, y el nombre haría que ocupe media pantalla. */
+@media (max-width: 560px) {
+  .flecha-nombre { display: none; }
+}

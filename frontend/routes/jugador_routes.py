@@ -2,7 +2,7 @@
 import auth
 from flask import Blueprint, redirect, render_template, request, url_for
 
-from services import api
+from services import api, navegacion
 
 jugador_bp = Blueprint("jugador", __name__, url_prefix="/jugadores")
 
@@ -59,10 +59,17 @@ def eliminar(jugador_id):
 
 @jugador_bp.route("/<int:jugador_id>")
 def detalle(jugador_id):
+    # El mismo listado que se usa para navegar: así las flechas siguen el
+    # orden que se ve en pantalla y no otro.
+    todos = api.get("/jugadores")
+    anterior, siguiente = navegacion.vecinos(todos, jugador_id)
+
     return render_template(
         "jugadores/detalle.html",
         jugador=api.get(f"/jugadores/{jugador_id}"),
         estadisticas=api.get(f"/jugadores/{jugador_id}/estadisticas"),
+        anterior=anterior,
+        siguiente=siguiente,
     )
 
 

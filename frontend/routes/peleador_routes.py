@@ -2,7 +2,7 @@
 import auth
 from flask import Blueprint, redirect, render_template, request, url_for
 
-from services import api
+from services import api, navegacion
 
 peleador_bp = Blueprint("peleador", __name__, url_prefix="/peleadores")
 
@@ -14,10 +14,14 @@ def listado():
 
 @peleador_bp.route("/<int:peleador_id>")
 def detalle(peleador_id):
+    anterior, siguiente = navegacion.vecinos(api.get("/peleadores"), peleador_id)
+
     return render_template(
         "peleadores/detalle.html",
         peleador=api.get(f"/peleadores/{peleador_id}"),
         estadisticas=api.get(f"/peleadores/{peleador_id}/estadisticas"),
+        anterior=anterior,
+        siguiente=siguiente,
     )
 
 
