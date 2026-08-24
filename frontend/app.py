@@ -4,6 +4,7 @@ import auth
 from config import Config
 from routes.auth_routes import auth_bp
 from routes.configuracion_routes import configuracion_bp
+from routes.historial_routes import historial_bp
 from routes.inicio_routes import inicio_bp
 from routes.jugador_routes import jugador_bp
 from routes.peleador_routes import peleador_bp
@@ -94,6 +95,7 @@ def create_app():
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(configuracion_bp)
+    app.register_blueprint(historial_bp)
     app.register_blueprint(inicio_bp)
     app.register_blueprint(jugador_bp)
     app.register_blueprint(peleador_bp)

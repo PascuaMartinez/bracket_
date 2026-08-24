@@ -7,6 +7,7 @@ from controllers.peleador_routes import peleador_bp
 from controllers.torneo_routes import torneo_bp
 from controllers.auth_routes import auth_bp
 from controllers.configuracion_routes import configuracion_bp
+from controllers.historial_routes import historial_bp
 from controllers.partido_routes import partido_bp
 
 
@@ -25,6 +26,7 @@ def create_app():
     app.register_blueprint(partido_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(configuracion_bp)
+    app.register_blueprint(historial_bp)
 
     @app.after_request
     def invalidar_cache_si_hubo_cambios(respuesta):

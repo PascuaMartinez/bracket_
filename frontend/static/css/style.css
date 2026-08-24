@@ -618,3 +618,25 @@ main { padding: 36px 0 64px; }
 
 .linea-resolver { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
 .linea-resolver input { font-size: 13px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 3px; }
+
+/* --- Filtros y paginación --- */
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+
+.filtros .campo { flex: 1 1 180px; }
+
+.ganador { font-weight: 600; color: var(--pine); }
+
+.paginacion {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+}

@@ -176,3 +176,65 @@ def obtener_pospuestos(torneo_id):
     cursor.close()
     conn.close()
     return [Partido.from_row(f) for f in filas]
+
+
+def buscar(jugador_id=None, torneo_id=None, peleador_id=None,
+           limite=50, desplazamiento=0):
+    """
+    Busca partidos jugados, con filtros opcionales y de a tandas.
+
+    Devuelve (partidos, total). El total viene aparte porque la lista está
+    recortada: sin él no habría forma de saber cuántas páginas hay ni de
+    decir "mostrando 50 de 340".
+
+    El recorte no es un lujo: con 20 torneos de 8 jugadores son más de mil
+    partidos, y traerlos todos para mostrar los primeros 50 desperdicia
+    memoria y tiempo en los dos lados.
+    """
+    condiciones = ["p.estado = 'finalizado'", "p.es_pase_libre = FALSE"]
+    parametros = []
+
+    if jugador_id:
+        # Puede estar de cualquier lado del partido.
+        condiciones.append("(p.jugador1_id = %s OR p.jugador2_id = %s)")
+        parametros += [jugador_id, jugador_id]
+    if torneo_id:
+        condiciones.append("p.torneo_id = %s")
+        parametros.append(torneo_id)
+    if peleador_id:
+        condiciones.append("(p.jugador1_peleador_id = %s OR p.jugador2_peleador_id = %s)")
+        parametros += [peleador_id, peleador_id]
+
+    where = " AND ".join(condiciones)
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # El total se cuenta en la base y no contando filas en Python: contar
+    # en Python obligaría a traer todo, que es justo lo que se quiere
+    # evitar.
+    cursor.execute(f"SELECT COUNT(*) AS total FROM partido p WHERE {where}", parametros)
+    total = cursor.fetchone()["total"]
+
+    # Los nombres vienen en la misma consulta. Traer los partidos y
+    # después buscar el nombre de cada jugador sería una consulta por
+    # fila: cincuenta partidos, cien consultas.
+    cursor.execute(
+        f"""SELECT p.*, t.nombre AS torneo_nombre, t.fecha AS torneo_fecha,
+                   j1.nombre AS jugador1_nombre, j2.nombre AS jugador2_nombre,
+                   pe1.nombre AS peleador1_nombre, pe2.nombre AS peleador2_nombre
+            FROM partido p
+            JOIN torneo t ON t.id = p.torneo_id
+            JOIN jugador j1 ON j1.id = p.jugador1_id
+            LEFT JOIN jugador j2 ON j2.id = p.jugador2_id
+            LEFT JOIN peleador pe1 ON pe1.id = p.jugador1_peleador_id
+            LEFT JOIN peleador pe2 ON pe2.id = p.jugador2_peleador_id
+            WHERE {where}
+            ORDER BY t.fecha DESC, p.orden DESC
+            LIMIT %s OFFSET %s""",
+        parametros + [limite, desplazamiento],
+    )
+    filas = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return filas, total

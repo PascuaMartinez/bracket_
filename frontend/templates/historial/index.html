@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Historial · Bracket{% endblock %}
+
+{% block content %}
+<h1 class="titulo-pagina">Historial de partidos</h1>
+<p class="subtitulo">
+  {{ resultado.total }} partido{{ 's' if resultado.total != 1 }} jugado{{ 's' if resultado.total != 1 }}.
+</p>
+
+{# Los filtros van por GET y no por POST: así el resultado queda en la
+   dirección y se puede compartir o guardar en favoritos. #}
+<form method="get" class="panel filtros">
+  <div class="campo">
+    <label for="jugador_id">Jugador</label>
+    <select id="jugador_id" name="jugador_id">
+      <option value="">Todos</option>
+      {% for j in jugadores %}
+      <option value="{{ j.id }}" {{ 'selected' if filtros.jugador_id == j.id|string }}>{{ j.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="campo">
+    <label for="torneo_id">Torneo</label>
+    <select id="torneo_id" name="torneo_id">
+      <option value="">Todos</option>
+      {% for t in torneos %}
+      <option value="{{ t.id }}" {{ 'selected' if filtros.torneo_id == t.id|string }}>{{ t.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="campo">
+    <label for="peleador_id">Personaje</label>
+    <select id="peleador_id" name="peleador_id">
+      <option value="">Todos</option>
+      {% for p in peleadores %}
+      <option value="{{ p.id }}" {{ 'selected' if filtros.peleador_id == p.id|string }}>{{ p.nombre }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <button type="submit" class="boton">Filtrar</button>
+</form>
+
+{% if resultado.partidos %}
+<div class="tabla-contenedor">
+<table class="tabla">
+  <thead>
+    <tr><th>Fecha</th><th>Torneo</th><th>Partido</th><th>Rondas</th></tr>
+  </thead>
+  <tbody>
+    {% for p in resultado.partidos %}
+    <tr>
+      <td class="dato">{{ p.fecha }}</td>
+      <td><a href="{{ url_for('torneo.detalle', torneo_id=p.torneo_id) }}">{{ p.torneo_nombre }}</a></td>
+      <td>
+        {# El ganador va destacado: en una lista larga, distinguirlo de un
+           vistazo importa más que el orden en que estén escritos. #}
+        <span class="{{ 'ganador' if p.jugador1.gano }}">
+          {{ p.jugador1.nombre }}{% if p.jugador1.peleador %} <span class="tenue">({{ p.jugador1.peleador }})</span>{% endif %}
+        </span>
+        <span class="tenue">vs</span>
+        <span class="{{ 'ganador' if p.jugador2.gano }}">
+          {{ p.jugador2.nombre }}{% if p.jugador2.peleador %} <span class="tenue">({{ p.jugador2.peleador }})</span>{% endif %}
+        </span>
+      </td>
+      <td class="dato">{{ '2-0' if p.rondas == 2 else ('2-1' if p.rondas == 3 else '—') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% if resultado.paginas > 1 %}
+<div class="paginacion">
+  {% if resultado.pagina > 1 %}
+  <a href="{{ url_for('historial.index', pagina=resultado.pagina - 1, **filtros_activos) }}">Anterior</a>
+  {% endif %}
+  <span class="tenue">Página {{ resultado.pagina }} de {{ resultado.paginas }}</span>
+  {% if resultado.pagina < resultado.paginas %}
+  <a href="{{ url_for('historial.index', pagina=resultado.pagina + 1, **filtros_activos) }}">Siguiente</a>
+  {% endif %}
+</div>
+{% endif %}
+{% else %}
+<div class="vacio"><p>No hay partidos que coincidan con esos filtros.</p></div>
+{% endif %}
+{% endblock %}
