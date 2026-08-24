@@ -1,7 +1,10 @@
 """Endpoints de personajes."""
 from flask import Blueprint, jsonify, request
 
-from services import estadisticas_peleador_service, peleador_service
+from repositories import peleador_repository
+from services import (
+    estadisticas_peleador_service, imagenes_service, peleador_service,
+)
 
 peleador_bp = Blueprint("peleador", __name__, url_prefix="/peleadores")
 
@@ -27,6 +30,25 @@ def estadisticas(peleador_id):
         ), 200
     except estadisticas_peleador_service.PeleadorNoEncontradoError as e:
         return jsonify({"error": str(e)}), 404
+
+
+@peleador_bp.route("/<int:peleador_id>/imagen", methods=["POST"])
+def subir_imagen(peleador_id):
+    try:
+        peleador_service.obtener_peleador(peleador_id)
+    except peleador_service.PeleadorNoEncontradoError as e:
+        return jsonify({"error": str(e)}), 404
+
+    try:
+        ruta = imagenes_service.guardar(request.files.get("imagen"), "peleadores")
+    except imagenes_service.ImagenInvalidaError as e:
+        return jsonify({"error": str(e)}), 400
+
+    if ruta is None:
+        return jsonify({"error": "No se recibió ninguna imagen"}), 400
+
+    peleador_repository.actualizar_imagen(peleador_id, ruta)
+    return jsonify(peleador_service.obtener_peleador(peleador_id)), 200
 
 
 @peleador_bp.route("", methods=["POST"])

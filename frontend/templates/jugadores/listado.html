@@ -14,7 +14,16 @@
 <div class="grilla">
   {% for jugador in jugadores %}
   <a class="panel panel-enlace" href="{{ url_for('jugador.detalle', jugador_id=jugador.id) }}">
-    <p class="titulo-seccion">{{ jugador.nombre }}</p>
+    <div class="tarjeta-con-icono">
+      {% if jugador.imagen_icono %}
+      <img class="icono" src="{{ jugador.imagen_icono | url_imagen }}" alt="">
+      {% else %}
+      {# Sin imagen, la inicial: mantiene la alineación de la lista en vez
+         de dejar un hueco. #}
+      <span class="icono icono-inicial">{{ jugador.nombre[0] | upper }}</span>
+      {% endif %}
+      <p class="titulo-seccion">{{ jugador.nombre }}</p>
+    </div>
   </a>
   {% endfor %}
 </div>

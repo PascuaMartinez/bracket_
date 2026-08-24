@@ -3,7 +3,12 @@
 
 {% block content %}
 <div class="fila-titulo">
-  <h1 class="titulo-pagina">{{ jugador.nombre }}</h1>
+  <div class="titulo-con-foto">
+    {% if jugador.imagen_vertical %}
+    <img class="foto-perfil" src="{{ jugador.imagen_vertical | url_imagen }}" alt="">
+    {% endif %}
+    <h1 class="titulo-pagina">{{ jugador.nombre }}</h1>
+  </div>
   {% if hay_sesion() %}<a class="boton-secundario" href="{{ url_for('jugador.editar', jugador_id=jugador.id) }}">Editar</a>{% endif %}
 </div>
 

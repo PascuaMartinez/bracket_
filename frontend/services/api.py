@@ -28,6 +28,19 @@ def put(ruta, datos):
     return _pedir("PUT", ruta, json=datos)
 
 
+def subir_archivo(ruta, archivo, campos=None):
+    """Manda un archivo al backend.
+
+    Va aparte de post() porque un archivo no viaja como JSON: se manda
+    como formulario, que es lo que permite transmitirlo tal cual sin
+    codificarlo ni cargarlo entero en memoria."""
+    return _pedir(
+        "POST", ruta,
+        files={"imagen": (archivo.filename, archivo.stream, archivo.mimetype)},
+        data=campos or {},
+    )
+
+
 def delete(ruta):
     return _pedir("DELETE", ruta)
 

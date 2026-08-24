@@ -80,3 +80,17 @@ def eliminar(jugador_id):
     cursor.close()
     conn.close()
     return filas_afectadas > 0
+
+
+def actualizar_imagen(jugador_id, campo, ruta):
+    """Guarda la ruta de una imagen. campo dice cuál de las dos."""
+    if campo not in ("imagen_vertical_path", "imagen_icono_path"):
+        raise ValueError(f"Campo de imagen desconocido: {campo}")
+    conn = get_connection()
+    cursor = conn.cursor()
+    # El nombre de columna se interpola pero sale de una lista cerrada,
+    # nunca de datos del usuario: los valores siguen yendo como parámetros.
+    cursor.execute(f"UPDATE jugador SET {campo} = %s WHERE id = %s", (ruta, jugador_id))
+    conn.commit()
+    cursor.close()
+    conn.close()

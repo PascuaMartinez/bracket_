@@ -10,7 +10,8 @@ que corresponde, para que el servicio pueda ignorar que HTTP existe.
 """
 from flask import Blueprint, jsonify, request
 
-from services import estadisticas_service, jugador_service
+from services import estadisticas_service, imagenes_service, jugador_service
+from repositories import jugador_repository
 
 jugador_bp = Blueprint("jugador", __name__, url_prefix="/jugadores")
 
@@ -34,6 +35,32 @@ def estadisticas(jugador_id):
         return jsonify(estadisticas_service.obtener_estadisticas(jugador_id)), 200
     except estadisticas_service.JugadorNoEncontradoError as e:
         return jsonify({"error": str(e)}), 404
+
+
+@jugador_bp.route("/<int:jugador_id>/imagen", methods=["POST"])
+def subir_imagen(jugador_id):
+    """Recibe la imagen como archivo, no como JSON.
+
+    Un archivo en JSON iría codificado en base64, lo que lo agranda un
+    tercio y obliga a cargarlo entero en memoria de los dos lados."""
+    try:
+        jugador_service.obtener_jugador(jugador_id)
+    except jugador_service.JugadorNoEncontradoError as e:
+        return jsonify({"error": str(e)}), 404
+
+    tipo = request.form.get("tipo", "vertical")
+    campo = "imagen_icono_path" if tipo == "icono" else "imagen_vertical_path"
+
+    try:
+        ruta = imagenes_service.guardar(request.files.get("imagen"), "jugadores")
+    except imagenes_service.ImagenInvalidaError as e:
+        return jsonify({"error": str(e)}), 400
+
+    if ruta is None:
+        return jsonify({"error": "No se recibió ninguna imagen"}), 400
+
+    jugador_repository.actualizar_imagen(jugador_id, campo, ruta)
+    return jsonify(jugador_service.obtener_jugador(jugador_id)), 200
 
 
 @jugador_bp.route("", methods=["POST"])

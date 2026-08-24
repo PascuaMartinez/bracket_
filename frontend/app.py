@@ -29,6 +29,14 @@ def create_app():
     app.jinja_env.globals["hay_sesion"] = auth.hay_sesion
     app.jinja_env.globals["usuario_actual"] = auth.usuario_actual
 
+    @app.template_filter("url_imagen")
+    def url_imagen(ruta):
+        """Las imágenes las sirve el backend, no esta aplicación: la ruta
+        guardada es relativa y hay que anteponerle dónde vive."""
+        if not ruta:
+            return None
+        return f"{Config.API_BASE_URL}/static/{ruta}"
+
     @app.template_filter("nombre_formato")
     def nombre_formato(valor):
         return NOMBRES_DE_FORMATO.get(valor, (valor or "").replace("_", " "))

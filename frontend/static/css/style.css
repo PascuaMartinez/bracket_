@@ -555,3 +555,48 @@ main { padding: 36px 0 64px; }
   color: var(--pine);
   margin-left: 6px;
 }
+
+/* --- Imágenes --- */
+
+.vista-previa {
+  max-width: 160px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.vista-previa-icono { max-width: 64px; border-radius: 50%; }
+
+.tarjeta-con-icono { display: flex; align-items: center; gap: 12px; }
+
+.icono {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+}
+
+/* El reemplazo cuando no hay imagen: la inicial sobre el color de acento.
+   Mantiene la alineación de la lista en vez de dejar un hueco. */
+.icono-inicial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pine-soft);
+  color: var(--pine);
+  font-family: var(--font-titulo);
+  font-weight: 600;
+}
+
+.titulo-con-foto { display: flex; align-items: center; gap: 16px; }
+
+.foto-perfil {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+
+.tarjeta-con-icono .titulo-seccion { margin: 0; }

@@ -28,7 +28,8 @@ def nuevo():
         return render_template("peleadores/formulario.html", peleador=None, error=None)
 
     try:
-        api.post("/peleadores", {"nombre": request.form.get("nombre")})
+        creado = api.post("/peleadores", {"nombre": request.form.get("nombre")})
+        _subir_imagen(creado["id"])
     except api.ErrorDeApi as e:
         # El backend rechaza los nombres repetidos: mostrar ese motivo tal
         # como viene evita tener la misma regla escrita en los dos lados.
@@ -47,6 +48,7 @@ def editar(peleador_id):
 
     try:
         api.put(f"/peleadores/{peleador_id}", {"nombre": request.form.get("nombre")})
+        _subir_imagen(peleador_id)
     except api.ErrorDeApi as e:
         return render_template("peleadores/formulario.html", peleador=request.form,
                                error=str(e)), 400
@@ -59,3 +61,9 @@ def editar(peleador_id):
 def eliminar(peleador_id):
     api.delete(f"/peleadores/{peleador_id}")
     return redirect(url_for("peleador.listado"))
+
+
+def _subir_imagen(peleador_id):
+    archivo = request.files.get("imagen_icono")
+    if archivo and archivo.filename:
+        api.subir_archivo(f"/peleadores/{peleador_id}/imagen", archivo)

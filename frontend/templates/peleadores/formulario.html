@@ -6,13 +6,21 @@
 
 {% if error %}<div class="aviso-error">{{ error }}</div>{% endif %}
 
-<form method="post" class="panel formulario">
+<form method="post" class="panel formulario" enctype="multipart/form-data">
   <div class="campo">
     <label for="nombre">Nombre</label>
     <input type="text" id="nombre" name="nombre" required
            value="{{ peleador.nombre if peleador else '' }}">
     <p class="ayuda">No puede repetirse: dos personajes con el mismo nombre
        partirían sus estadísticas en dos mitades que nunca se suman.</p>
+  </div>
+
+  <div class="campo">
+    <label for="imagen_icono">Ícono <span class="tenue">(opcional)</span></label>
+    {% if peleador and peleador.imagen_icono %}
+    <img class="vista-previa vista-previa-icono" src="{{ peleador.imagen_icono | url_imagen }}" alt="">
+    {% endif %}
+    <input type="file" id="imagen_icono" name="imagen_icono" accept="image/*">
   </div>
 
   <div class="acciones">

@@ -19,7 +19,8 @@ def nuevo():
         return render_template("jugadores/formulario.html", jugador=None, error=None)
 
     try:
-        api.post("/jugadores", _datos_del_formulario())
+        creado = api.post("/jugadores", _datos_del_formulario())
+        _subir_imagenes(creado["id"])
     except api.ErrorDeApi as e:
         # Se vuelve al formulario con el motivo, conservando lo que la
         # persona ya había escrito: perder el formulario entero por un
@@ -39,6 +40,7 @@ def editar(jugador_id):
 
     try:
         api.put(f"/jugadores/{jugador_id}", _datos_del_formulario())
+        _subir_imagenes(jugador_id)
     except api.ErrorDeApi as e:
         return render_template("jugadores/formulario.html", jugador=request.form,
                                error=str(e)), 400
@@ -71,3 +73,17 @@ def _datos_del_formulario():
         # espera una fecha o nada.
         "fecha_nacimiento": request.form.get("fecha_nacimiento") or None,
     }
+
+
+def _subir_imagenes(jugador_id):
+    """Sube las imágenes que se hayan elegido.
+
+    Van en pedidos aparte del alta y no en el mismo: el jugador tiene que
+    existir antes de poder colgarle una imagen. La contra es que si falla
+    la imagen el jugador ya quedó creado, que es preferible al revés --
+    perder los datos cargados por una foto que no subió.
+    """
+    for campo, tipo in (("imagen_vertical", "vertical"), ("imagen_icono", "icono")):
+        archivo = request.files.get(campo)
+        if archivo and archivo.filename:
+            api.subir_archivo(f"/jugadores/{jugador_id}/imagen", archivo, {"tipo": tipo})
