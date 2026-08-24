@@ -94,6 +94,37 @@
 </table>
 </div>
 
+{% if estadisticas.partidos_jugados %}
+<h2 class="titulo-seccion">Cómo se dio</h2>
+<div class="grilla grilla-numeros">
+  <div class="panel numero">
+    <p class="numero-valor">{{ estadisticas.partidos_jugados }}</p>
+    <p class="numero-etiqueta">Partidos</p>
+  </div>
+  {# Las barridas solo se muestran si se registraron rondas: sin ese dato
+     el número sería siempre cero y no significaría nada. #}
+  {% if estadisticas.partidos_con_rondas %}
+  <div class="panel numero">
+    <p class="numero-valor">{{ estadisticas.barridas }}</p>
+    <p class="numero-etiqueta">Barridas (2-0)</p>
+  </div>
+  <div class="panel numero">
+    <p class="numero-valor">{{ estadisticas.cerrados }}</p>
+    <p class="numero-etiqueta">Cerrados (2-1)</p>
+  </div>
+  {% endif %}
+  {% if estadisticas.mejor_racha %}
+  <div class="panel numero">
+    <p class="numero-valor">{{ estadisticas.mejor_racha[0].veces }}</p>
+    <p class="numero-etiqueta">
+      Mejor racha
+      <br><span class="tenue">{{ estadisticas.mejor_racha | map(attribute='nombre') | join(', ') }}</span>
+    </p>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
 <h2 class="titulo-seccion">Partidos</h2>
 <ol class="lista-partidos">
   {% for p in partidos %}

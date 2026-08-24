@@ -2,8 +2,8 @@
 from flask import Blueprint, jsonify, request, send_file
 
 from services import (
-    exportar_service, grupos_consulta_service, tabla_historica_service,
-    tabla_service, torneo_service,
+    estadisticas_torneo_service, exportar_service, grupos_consulta_service,
+    tabla_historica_service, tabla_service, torneo_service,
 )
 
 torneo_bp = Blueprint("torneo", __name__, url_prefix="/torneos")
@@ -75,6 +75,16 @@ def imagen(torneo_id):
         imagen_generada, mimetype="image/png",
         download_name=f"{nombre or 'torneo'}.png",
     )
+
+
+@torneo_bp.route("/<int:torneo_id>/estadisticas", methods=["GET"])
+def estadisticas(torneo_id):
+    try:
+        return jsonify(
+            estadisticas_torneo_service.obtener_estadisticas(torneo_id)
+        ), 200
+    except estadisticas_torneo_service.TorneoNoEncontradoError as e:
+        return jsonify({"error": str(e)}), 404
 
 
 @torneo_bp.route("/<int:torneo_id>/tabla", methods=["GET"])

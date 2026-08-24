@@ -68,6 +68,8 @@ def detalle(torneo_id):
     # Los torneos vienen del más nuevo al más viejo, así que "siguiente"
     # lleva a uno más viejo. Se invierten para que la flecha derecha
     # avance en el tiempo, que es lo que uno espera al recorrerlos.
+    datos["estadisticas"] = api.get(f"/torneos/{torneo_id}/estadisticas")
+
     anterior, siguiente = navegacion.vecinos(torneos.listar(), torneo_id)
     datos["anterior"], datos["siguiente"] = siguiente, anterior
 

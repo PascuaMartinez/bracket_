@@ -1,23 +1,29 @@
 """Pruebas de las estadísticas de un jugador."""
+from datetime import date
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from services import estadisticas_service
 
 
-def partido(torneo_id, jugador1, jugador2, ganador, orden=1, es_pase_libre=False):
+def partido(torneo_id, jugador1, jugador2, ganador, orden=1, es_pase_libre=False,
+            rondas=None):
     return SimpleNamespace(
         torneo_id=torneo_id, jugador1_id=jugador1, jugador2_id=jugador2,
         ganador_id=ganador, orden=orden, estado="finalizado",
-        es_pase_libre=es_pase_libre,
+        es_pase_libre=es_pase_libre, rondas_jugadas=rondas,
     )
 
 
 def calcular(partidos, jugador_id=1, nombres=None):
     nombres = nombres or {1: "Ana", 2: "Beto", 3: "Caro"}
     jugadores = [SimpleNamespace(id=i, nombre=n) for i, n in nombres.items()]
-    torneos = [SimpleNamespace(id=1, estado="finalizado"),
-               SimpleNamespace(id=2, estado="finalizado")]
+    torneos = [
+        SimpleNamespace(id=1, estado="finalizado", nombre="Enero",
+                        fecha=date(2026, 1, 1)),
+        SimpleNamespace(id=2, estado="finalizado", nombre="Marzo",
+                        fecha=date(2026, 3, 1)),
+    ]
 
     with patch.object(estadisticas_service.jugador_repository, "obtener_por_id",
                       return_value=SimpleNamespace(id=jugador_id, nombre=nombres[jugador_id])), \
@@ -26,7 +32,9 @@ def calcular(partidos, jugador_id=1, nombres=None):
          patch.object(estadisticas_service.torneo_repository, "obtener_todos",
                       return_value=torneos), \
          patch.object(estadisticas_service.partido_repository, "obtener_por_torneo",
-                      side_effect=lambda tid: [p for p in partidos if p.torneo_id == tid]):
+                      side_effect=lambda tid: [p for p in partidos if p.torneo_id == tid]), \
+         patch("services.tabla_service.calcular_tabla",
+               return_value=[{"jugador_id": jugador_id, "puesto": 1}]):
         return estadisticas_service.obtener_estadisticas(jugador_id)
 
 

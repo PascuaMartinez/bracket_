@@ -55,6 +55,40 @@
       <td>Contra quién perdió más</td>
       <td>{{ estadisticas.contra_quien_perdio_mas | nombres_y_veces('perdidos') }}</td>
     </tr>
+    {% if estadisticas.matchup_mas_parejo %}
+    <tr>
+      <td>Matchup más parejo</td>
+      <td>{{ estadisticas.matchup_mas_parejo | nombres_con_record }}</td>
+    </tr>
+    {% endif %}
+    {% if estadisticas.peor_racha %}
+    <tr><td>Peor racha de derrotas</td><td class="dato">{{ estadisticas.peor_racha }}</td></tr>
+    {% endif %}
+    {% if estadisticas.barridas_a_favor %}
+    <tr><td>Barridas a favor (2-0)</td><td class="dato">{{ estadisticas.barridas_a_favor }}</td></tr>
+    {% endif %}
+    {% if estadisticas.barridas_en_contra %}
+    <tr><td>Barridas en contra</td><td class="dato">{{ estadisticas.barridas_en_contra }}</td></tr>
+    {% endif %}
+    {% if estadisticas.partidos_cerrados %}
+    <tr><td>Partidos cerrados (2-1)</td><td class="dato">{{ estadisticas.partidos_cerrados }}</td></tr>
+    {% endif %}
+    {% if estadisticas.mejor_puesto %}
+    <tr>
+      <td>Mejor resultado</td>
+      <td>{{ estadisticas.mejor_puesto.puesto }}° en {{ estadisticas.mejor_puesto.torneo }}</td>
+    </tr>
+    {% endif %}
+    {% if estadisticas.primer_torneo %}
+    <tr>
+      <td>Primer torneo</td>
+      <td>{{ estadisticas.primer_torneo.nombre }} <span class="tenue">({{ estadisticas.primer_torneo.fecha }})</span></td>
+    </tr>
+    <tr>
+      <td>Último torneo</td>
+      <td>{{ estadisticas.ultimo_torneo.nombre }} <span class="tenue">({{ estadisticas.ultimo_torneo.fecha }})</span></td>
+    </tr>
+    {% endif %}
   </tbody>
 </table>
 </div>

@@ -40,7 +40,9 @@ def obtener_estadisticas(jugador_id):
         "torneos_jugados": _contar_torneos(partidos),
         **_record(partidos, jugador_id),
         **_rivales(partidos, jugador_id, nombres),
-        "mejor_racha": _mejor_racha(partidos, jugador_id),
+        **_rachas(partidos, jugador_id),
+        **_por_rondas(partidos, jugador_id),
+        **_trayectoria(jugador_id, torneos, partidos),
     }
 
     # La identidad no se filtra: sin nombre ni id, la respuesta no sirve
@@ -131,19 +133,94 @@ def _matchup_mas_parejo(rivales):
     return [r for r in empatados if r["jugados"] == max_jugados]
 
 
-def _mejor_racha(partidos, jugador_id):
-    """La seguidilla de victorias más larga, en orden cronológico.
+def _rachas(partidos, jugador_id):
+    """
+    La mejor seguidilla de victorias y la peor de derrotas.
 
     Se ordena por torneo y por el orden dentro del torneo: la fecha sola
-    no alcanza porque todos los partidos de una noche la comparten."""
+    no alcanza porque todos los partidos de una noche la comparten, y
+    entonces el orden quedaría a merced de cómo los devuelva la base.
+    """
     en_orden = sorted(partidos, key=lambda p: (p.torneo_id, p.orden or 0))
 
-    mejor = 0
-    actual = 0
+    mejor_racha = racha_ganando = 0
+    peor_racha = racha_perdiendo = 0
     for p in en_orden:
-        actual = actual + 1 if p.ganador_id == jugador_id else 0
-        mejor = max(mejor, actual)
-    return mejor
+        if p.ganador_id == jugador_id:
+            racha_ganando += 1
+            racha_perdiendo = 0
+        else:
+            racha_perdiendo += 1
+            racha_ganando = 0
+        mejor_racha = max(mejor_racha, racha_ganando)
+        peor_racha = max(peor_racha, racha_perdiendo)
+
+    return {"mejor_racha": mejor_racha, "peor_racha": peor_racha}
+
+
+def _por_rondas(partidos, jugador_id):
+    """
+    Cómo gana y cómo pierde: arrasando o sufriendo.
+
+    Depende de que se haya registrado el dato de rondas, que es opcional.
+    Los partidos sin ese dato quedan afuera de la cuenta en vez de contar
+    como si hubieran sido cerrados.
+    """
+    con_rondas = [p for p in partidos if p.rondas_jugadas]
+
+    return {
+        "barridas_a_favor": sum(
+            1 for p in con_rondas if p.ganador_id == jugador_id and p.rondas_jugadas == 2
+        ),
+        "barridas_en_contra": sum(
+            1 for p in con_rondas if p.ganador_id != jugador_id and p.rondas_jugadas == 2
+        ),
+        "partidos_cerrados": sum(1 for p in con_rondas if p.rondas_jugadas == 3),
+    }
+
+
+def _trayectoria(jugador_id, torneos, partidos):
+    """
+    Cuándo empezó, cuándo jugó por última vez y cuál fue su mejor
+    resultado.
+
+    El mejor puesto sale de la tabla de cada torneo. Se recorre acá y no
+    se pide a la tabla histórica para no arrastrar el cálculo del
+    acumulado entero solo para saber un puesto.
+    """
+    from services import tabla_service
+
+    torneos_del_jugador = {p.torneo_id for p in partidos}
+    if not torneos_del_jugador:
+        return {"primer_torneo": None, "ultimo_torneo": None, "mejor_puesto": None}
+
+    jugados = [t for t in torneos if t.id in torneos_del_jugador]
+    jugados.sort(key=lambda t: (t.fecha, t.id))
+
+    mejor_puesto = None
+    mejor_torneo = None
+    for torneo in jugados:
+        for fila in tabla_service.calcular_tabla(torneo.id):
+            if fila["jugador_id"] == jugador_id:
+                puesto = fila.get("puesto")
+                if puesto is not None and (mejor_puesto is None or puesto < mejor_puesto):
+                    mejor_puesto = puesto
+                    mejor_torneo = torneo.nombre
+                break
+
+    return {
+        "primer_torneo": {
+            "nombre": jugados[0].nombre,
+            "fecha": jugados[0].fecha.isoformat() if jugados[0].fecha else None,
+        },
+        "ultimo_torneo": {
+            "nombre": jugados[-1].nombre,
+            "fecha": jugados[-1].fecha.isoformat() if jugados[-1].fecha else None,
+        },
+        "mejor_puesto": (
+            {"puesto": mejor_puesto, "torneo": mejor_torneo} if mejor_puesto else None
+        ),
+    }
 
 
 def _todos_los_maximos(elementos, clave):
