@@ -29,6 +29,12 @@ def create_app():
     app.jinja_env.globals["hay_sesion"] = auth.hay_sesion
     app.jinja_env.globals["usuario_actual"] = auth.usuario_actual
 
+    # La imagen la genera el backend: el enlace apunta directo ahí en
+    # vez de pasar por esta aplicación, que solo agregaría un salto.
+    app.jinja_env.globals["url_imagen_torneo"] = (
+        lambda torneo_id: f"{Config.API_BASE_URL}/torneos/{torneo_id}/imagen"
+    )
+
     @app.template_filter("url_imagen")
     def url_imagen(ruta):
         """Las imágenes las sirve el backend, no esta aplicación: la ruta

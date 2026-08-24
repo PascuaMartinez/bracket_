@@ -1,8 +1,9 @@
 """Endpoints de torneos."""
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 
 from services import (
-    grupos_consulta_service, tabla_historica_service, tabla_service, torneo_service,
+    exportar_service, grupos_consulta_service, tabla_historica_service,
+    tabla_service, torneo_service,
 )
 
 torneo_bp = Blueprint("torneo", __name__, url_prefix="/torneos")
@@ -41,6 +42,24 @@ def grupos(torneo_id):
         return jsonify(grupos_consulta_service.obtener_grupos(torneo_id)), 200
     except torneo_service.TorneoNoEncontradoError as e:
         return jsonify({"error": str(e)}), 404
+
+
+@torneo_bp.route("/<int:torneo_id>/imagen", methods=["GET"])
+def imagen(torneo_id):
+    """La tabla del torneo como PNG, para compartir."""
+    try:
+        torneo = torneo_service.obtener_torneo(torneo_id)
+    except torneo_service.TorneoNoEncontradoError as e:
+        return jsonify({"error": str(e)}), 404
+
+    imagen_generada = exportar_service.generar(torneo_id)
+    # El nombre del archivo sale del torneo: descargar veinte imágenes
+    # llamadas "imagen.png" no le sirve a nadie.
+    nombre = "".join(c if c.isalnum() or c in " -_" else "" for c in torneo["nombre"])
+    return send_file(
+        imagen_generada, mimetype="image/png",
+        download_name=f"{nombre or 'torneo'}.png",
+    )
 
 
 @torneo_bp.route("/<int:torneo_id>/tabla", methods=["GET"])
