@@ -55,6 +55,25 @@
     {% if estadisticas.espejos %}
     <tr><td>Espejos</td><td class="dato">{{ estadisticas.espejos }}</td></tr>
     {% endif %}
+    {% if estadisticas.mejor_resultado %}
+    <tr>
+      <td>Mejor resultado logrado</td>
+      <td>
+        {{ estadisticas.mejor_resultado.puesto }}° &mdash;
+        {{ estadisticas.mejor_resultado.jugador }} en {{ estadisticas.mejor_resultado.torneo }}
+      </td>
+    </tr>
+    {% endif %}
+    {% if estadisticas.primera_vez %}
+    <tr>
+      <td>Primera vez que se usó</td>
+      <td>{{ estadisticas.primera_vez.torneo }} <span class="tenue">({{ estadisticas.primera_vez.fecha }})</span></td>
+    </tr>
+    <tr>
+      <td>Última vez que se usó</td>
+      <td>{{ estadisticas.ultima_vez.torneo }} <span class="tenue">({{ estadisticas.ultima_vez.fecha }})</span></td>
+    </tr>
+    {% endif %}
   </tbody>
 </table>
 </div>

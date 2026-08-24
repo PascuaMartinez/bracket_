@@ -42,6 +42,15 @@ ESTADISTICAS = [
      "grupo": "Personaje"},
     {"clave": "peleador.partidos_cerrados", "nombre": "Partidos cerrados",
      "grupo": "Personaje"},
+    {"clave": "peleador.mejor_racha", "nombre": "Mejor racha", "grupo": "Personaje"},
+    {"clave": "peleador.torneos_distintos", "nombre": "En cuántos torneos apareció",
+     "grupo": "Personaje"},
+    {"clave": "peleador.primera_vez", "nombre": "Primera vez que se usó",
+     "grupo": "Personaje"},
+    {"clave": "peleador.ultima_vez", "nombre": "Última vez que se usó",
+     "grupo": "Personaje"},
+    {"clave": "peleador.mejor_resultado", "nombre": "Mejor resultado logrado",
+     "grupo": "Personaje"},
 ]
 
 CLAVES_VALIDAS = {e["clave"] for e in ESTADISTICAS}

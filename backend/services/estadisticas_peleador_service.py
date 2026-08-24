@@ -35,6 +35,7 @@ def obtener_estadisticas(peleador_id):
         **_quien_lo_usa(apariciones),
         **_enfrentamientos(apariciones, peleador_id),
         **_rachas_y_barridas(apariciones),
+        **_trayectoria(apariciones),
     }
 
     return {
@@ -75,6 +76,8 @@ def _apariciones(peleador_id):
                     "gano": p.ganador_id == jugador_id,
                     "rondas": p.rondas_jugadas,
                     "torneo_id": torneo.id,
+                    "torneo_nombre": torneo.nombre,
+                    "torneo_fecha": torneo.fecha,
                     "orden": p.orden or 0,
                 })
     return apariciones
@@ -181,3 +184,69 @@ def _todos_los_minimos(elementos, clave):
         return []
     minimo = min(clave(e) for e in elementos)
     return [e for e in elementos if clave(e) == minimo]
+
+
+def _trayectoria(apariciones):
+    """
+    Cuándo se usó por primera y última vez, y cuál fue su mejor resultado.
+
+    La primera y la última sirven para ver si un personaje está de moda o
+    cayó en desuso: uno con 30 usos pero ninguno en el último año cuenta
+    una historia distinta de uno con 30 repartidos hasta la semana pasada.
+    """
+    if not apariciones:
+        return {"primera_vez": None, "ultima_vez": None, "mejor_resultado": None}
+
+    con_fecha = [a for a in apariciones if a["torneo_fecha"]]
+    if not con_fecha:
+        return {"primera_vez": None, "ultima_vez": None,
+                "mejor_resultado": _mejor_resultado(apariciones)}
+
+    en_orden = sorted(con_fecha, key=lambda a: a["torneo_fecha"])
+
+    return {
+        "primera_vez": {
+            "torneo": en_orden[0]["torneo_nombre"],
+            "fecha": en_orden[0]["torneo_fecha"].isoformat(),
+        },
+        "ultima_vez": {
+            "torneo": en_orden[-1]["torneo_nombre"],
+            "fecha": en_orden[-1]["torneo_fecha"].isoformat(),
+        },
+        "mejor_resultado": _mejor_resultado(apariciones),
+    }
+
+
+def _mejor_resultado(apariciones):
+    """
+    El mejor puesto que sacó alguien en un torneo donde usó este personaje.
+
+    No dice que el personaje ganó el torneo -- quien lo usó pudo haberlo
+    hecho en un solo partido -- pero sí en qué compañía apareció. Un
+    personaje que nunca estuvo cerca de un podio cuenta algo.
+    """
+    from services import tabla_service
+
+    mejor = None
+    # Un jugador puede haber usado el personaje en varios partidos del
+    # mismo torneo: se mira cada par jugador-torneo una sola vez.
+    vistos = set()
+    for aparicion in apariciones:
+        clave = (aparicion["jugador_id"], aparicion["torneo_id"])
+        if clave in vistos:
+            continue
+        vistos.add(clave)
+
+        for fila in tabla_service.calcular_tabla(aparicion["torneo_id"]):
+            if fila["jugador_id"] != aparicion["jugador_id"]:
+                continue
+            puesto = fila.get("puesto")
+            if puesto is not None and (mejor is None or puesto < mejor["puesto"]):
+                mejor = {
+                    "puesto": puesto,
+                    "jugador": fila["nombre"],
+                    "torneo": aparicion["torneo_nombre"],
+                }
+            break
+
+    return mejor

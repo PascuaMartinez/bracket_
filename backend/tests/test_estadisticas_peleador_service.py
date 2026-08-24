@@ -1,4 +1,5 @@
 """Pruebas de las estadísticas de personajes y del matchup parejo."""
+from datetime import date
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -71,8 +72,12 @@ def calcular(partidos, peleador_id=1):
          patch.object(eps.peleador_repository, "obtener_todos", return_value=peleadores), \
          patch.object(eps.jugador_repository, "obtener_todos", return_value=jugadores), \
          patch.object(eps.torneo_repository, "obtener_todos",
-                      return_value=[SimpleNamespace(id=1, estado="finalizado")]), \
-         patch.object(eps.partido_repository, "obtener_por_torneo", return_value=partidos):
+                      return_value=[SimpleNamespace(id=1, estado="finalizado",
+                                                    nombre="Enero",
+                                                    fecha=date(2026, 1, 1))]), \
+         patch.object(eps.partido_repository, "obtener_por_torneo", return_value=partidos), \
+         patch("services.tabla_service.calcular_tabla",
+               return_value=[{"jugador_id": 1, "nombre": "Ana", "puesto": 1}]):
         return eps.obtener_estadisticas(peleador_id)
 
 
@@ -121,3 +126,31 @@ def test_sin_usos_no_falla():
     assert stats["veces_usado"] == 0
     assert stats["win_rate"] == 0
     assert stats["mas_usado_por"] == []
+
+
+def test_registra_la_primera_y_la_ultima_vez_que_se_uso():
+    """Un personaje con 30 usos pero ninguno reciente cuenta una historia
+    distinta de uno con 30 repartidos hasta la semana pasada."""
+    stats = calcular([partido(1, 2, peleador1=1, peleador2=2, ganador=1)])
+
+    assert stats["primera_vez"]["torneo"] == "Enero"
+    assert stats["ultima_vez"]["torneo"] == "Enero"
+
+
+def test_el_mejor_resultado_mira_cada_jugador_y_torneo_una_sola_vez():
+    """Alguien puede usar el mismo personaje en varios partidos del mismo
+    torneo: su puesto es uno solo."""
+    stats = calcular([
+        partido(1, 2, peleador1=1, peleador2=2, ganador=1, orden=1),
+        partido(1, 2, peleador1=1, peleador2=2, ganador=1, orden=2),
+    ])
+
+    assert stats["mejor_resultado"]["puesto"] == 1
+    assert stats["mejor_resultado"]["jugador"] == "Ana"
+
+
+def test_sin_usos_la_trayectoria_viene_vacia():
+    stats = calcular([])
+
+    assert stats["primera_vez"] is None
+    assert stats["mejor_resultado"] is None
