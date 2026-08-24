@@ -69,9 +69,53 @@ def listar_partidos(torneo_id):
 
 
 def obtener_partido_actual(torneo_id):
-    """El próximo partido a jugar, o None si ya se jugaron todos."""
+    """El próximo partido a jugar, o None si ya se jugaron todos.
+
+    Los pospuestos quedan fuera de esta cuenta: se saltean hasta que
+    alguien los retome a mano."""
     partido = partido_repository.obtener_siguiente_pendiente(torneo_id)
     return partido.to_dict() if partido else None
+
+
+def listar_pospuestos(torneo_id):
+    return [p.to_dict() for p in partido_repository.obtener_pospuestos(torneo_id)]
+
+
+def posponer(partido_id):
+    """
+    Saltea un partido y sigue con el próximo.
+
+    En un torneo real pasa: alguien salió a comprar, se cortó la luz, hay
+    que esperar a que llegue uno. Frenar el torneo entero por eso no tiene
+    sentido, y cargar un resultado falso para destrabarlo arruinaría las
+    estadísticas.
+
+    El partido no se pierde: queda aparte, listo para retomarse.
+    """
+    partido = partido_repository.obtener_por_id(partido_id)
+    if partido is None:
+        raise PartidoNoEncontradoError(f"No existe el partido {partido_id}")
+
+    if partido.estado == "finalizado":
+        raise ResultadoInvalidoError("Un partido ya jugado no se puede posponer")
+
+    partido_repository.cambiar_estado(partido_id, "pospuesto")
+
+
+def retomar(partido_id):
+    """Devuelve un partido pospuesto a la cola.
+
+    Vuelve a su lugar original según el orden del fixture, no al final:
+    el orden dice cómo se dio el torneo, y moverlo distorsionaría eso.
+    """
+    partido = partido_repository.obtener_por_id(partido_id)
+    if partido is None:
+        raise PartidoNoEncontradoError(f"No existe el partido {partido_id}")
+
+    if partido.estado != "pospuesto":
+        raise ResultadoInvalidoError("Ese partido no está pospuesto")
+
+    partido_repository.cambiar_estado(partido_id, "pendiente")
 
 
 def cargar_resultado(partido_id, ganador_id, peleador1_id=None,
@@ -101,6 +145,9 @@ def cargar_resultado(partido_id, ganador_id, peleador1_id=None,
             "Las rondas jugadas solo pueden ser 2 (barrida) o 3 (cerrado)"
         )
 
+    # registrar_resultado lo deja finalizado, así que un partido pospuesto
+    # se destraba solo al cargarle el resultado: no hace falta retomarlo
+    # primero.
     partido_repository.registrar_resultado(
         partido_id, ganador_id, peleador1_id, peleador2_id, rondas_jugadas
     )

@@ -149,3 +149,30 @@ def obtener_de_varios_torneos(torneos_ids):
     for fila in filas:
         por_torneo[fila["torneo_id"]].append(Partido.from_row(fila))
     return por_torneo
+
+
+def cambiar_estado(partido_id, estado):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE partido SET estado = %s WHERE id = %s", (estado, partido_id)
+    )
+    conn.commit()
+    filas = cursor.rowcount
+    cursor.close()
+    conn.close()
+    return filas > 0
+
+
+def obtener_pospuestos(torneo_id):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        """SELECT * FROM partido WHERE torneo_id = %s AND estado = 'pospuesto'
+           ORDER BY orden ASC""",
+        (torneo_id,),
+    )
+    filas = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return [Partido.from_row(f) for f in filas]

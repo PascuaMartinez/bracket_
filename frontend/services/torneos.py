@@ -39,6 +39,18 @@ def partido_actual(torneo_id):
     return api.get(f"/torneos/{torneo_id}/partido-actual")
 
 
+def pospuestos(torneo_id):
+    return api.get(f"/torneos/{torneo_id}/pospuestos")
+
+
+def posponer(partido_id):
+    return api.post(f"/partidos/{partido_id}/posponer", {})
+
+
+def retomar(partido_id):
+    return api.post(f"/partidos/{partido_id}/retomar", {})
+
+
 def crear(datos):
     return api.post("/torneos", datos)
 

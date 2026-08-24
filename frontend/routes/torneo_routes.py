@@ -90,6 +90,11 @@ def jugar(torneo_id):
     if partido is None:
         return redirect(url_for("torneo.detalle", torneo_id=torneo_id))
 
+    # Los pospuestos se muestran junto al partido actual: si quedaron
+    # afuera de la vista, es fácil terminar el torneo sin acordarse de
+    # que faltaban jugar.
+    lista_pospuestos = torneos.pospuestos(torneo_id)
+
     nombres = {j["id"]: j["nombre"] for j in api.get("/jugadores")}
     return render_template(
         "torneos/jugar.html",
@@ -98,6 +103,8 @@ def jugar(torneo_id):
         nombre1=nombres.get(partido["jugador1_id"]),
         nombre2=nombres.get(partido["jugador2_id"]),
         peleadores=api.get("/peleadores"),
+        pospuestos=lista_pospuestos,
+        nombres=nombres,
     )
 
 
@@ -143,3 +150,17 @@ def editar(torneo_id):
 def eliminar(torneo_id):
     torneos.eliminar(torneo_id)
     return redirect(url_for("torneo.listado"))
+
+
+@torneo_bp.route("/<int:torneo_id>/partidos/<int:partido_id>/posponer", methods=["POST"])
+@auth.requiere_sesion
+def posponer(torneo_id, partido_id):
+    torneos.posponer(partido_id)
+    return redirect(url_for("torneo.jugar", torneo_id=torneo_id))
+
+
+@torneo_bp.route("/<int:torneo_id>/partidos/<int:partido_id>/retomar", methods=["POST"])
+@auth.requiere_sesion
+def retomar(torneo_id, partido_id):
+    torneos.retomar(partido_id)
+    return redirect(url_for("torneo.jugar", torneo_id=torneo_id))

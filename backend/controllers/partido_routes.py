@@ -37,3 +37,30 @@ def cargar_resultado(partido_id):
         return jsonify({"error": str(e)}), 400
     except partido_service.PartidoNoEncontradoError as e:
         return jsonify({"error": str(e)}), 404
+
+
+@partido_bp.route("/torneos/<int:torneo_id>/pospuestos", methods=["GET"])
+def pospuestos(torneo_id):
+    return jsonify(partido_service.listar_pospuestos(torneo_id)), 200
+
+
+@partido_bp.route("/partidos/<int:partido_id>/posponer", methods=["POST"])
+def posponer(partido_id):
+    try:
+        partido_service.posponer(partido_id)
+        return "", 204
+    except partido_service.ResultadoInvalidoError as e:
+        return jsonify({"error": str(e)}), 400
+    except partido_service.PartidoNoEncontradoError as e:
+        return jsonify({"error": str(e)}), 404
+
+
+@partido_bp.route("/partidos/<int:partido_id>/retomar", methods=["POST"])
+def retomar(partido_id):
+    try:
+        partido_service.retomar(partido_id)
+        return "", 204
+    except partido_service.ResultadoInvalidoError as e:
+        return jsonify({"error": str(e)}), 400
+    except partido_service.PartidoNoEncontradoError as e:
+        return jsonify({"error": str(e)}), 404

@@ -50,4 +50,35 @@
 
   <button type="submit" class="boton">Guardar</button>
 </form>
+
+{# Posponer va en su propio formulario: si fuera un botón dentro del
+   anterior, el navegador podría mandarlo como envío del formulario de
+   resultado. #}
+<form method="post" class="formulario-suelto"
+      action="{{ url_for('torneo.posponer', torneo_id=torneo.id, partido_id=partido.id) }}">
+  <button type="submit" class="boton-secundario">Posponer este partido</button>
+  <p class="ayuda">Se saltea y se sigue con el próximo. Queda pendiente
+     para retomarlo cuando se pueda jugar.</p>
+</form>
+
+{% if pospuestos %}
+<h2 class="titulo-seccion">Partidos pospuestos</h2>
+<div class="tabla-contenedor">
+<table class="tabla">
+  <tbody>
+    {% for p in pospuestos %}
+    <tr>
+      <td>{{ nombres.get(p.jugador1_id, '?') }} vs {{ nombres.get(p.jugador2_id, '?') }}</td>
+      <td class="celda-acciones">
+        <form method="post"
+              action="{{ url_for('torneo.retomar', torneo_id=torneo.id, partido_id=p.id) }}">
+          <button type="submit" class="enlace-boton">Retomar</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
 {% endblock %}
