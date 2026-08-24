@@ -78,6 +78,17 @@ externo (el armado del fixture) se prueba directo, y la que lee datos se
 prueba sustituyendo los repositorios. Eso es posible porque el acceso a
 datos está aislado en su propia capa.
 
+## Un solo proceso
+
+El backend guarda en memoria los resultados calculados y los descarta
+cuando se carga un resultado. Eso significa que hay que correrlo con **un
+solo proceso**: con varios, cada uno tendría su propia copia, y una
+escritura atendida por uno no descartaría la copia de los otros -- que
+seguirían mostrando datos viejos hasta que venzan.
+
+Para el tamaño de este proyecto un proceso sobra. Si algún día hiciera
+falta escalar, el cache tendría que pasar a un servicio compartido.
+
 ## Usuarios
 
 Ver es público: cualquiera puede mirar torneos, tablas y estadísticas sin

@@ -1,6 +1,7 @@
-from flask import Flask
+from flask import Flask, request
 
 from config import Config
+from services import cache
 from controllers.jugador_routes import jugador_bp
 from controllers.peleador_routes import peleador_bp
 from controllers.torneo_routes import torneo_bp
@@ -22,6 +23,23 @@ def create_app():
     app.register_blueprint(torneo_bp)
     app.register_blueprint(partido_bp)
     app.register_blueprint(auth_bp)
+
+    @app.after_request
+    def invalidar_cache_si_hubo_cambios(respuesta):
+        """
+        Vacía el cache después de cualquier escritura exitosa.
+
+        Va acá y no en cada servicio que modifica datos a propósito: son
+        muchos, y alcanzaría con olvidarse en uno para que la aplicación
+        muestre datos viejos sin ninguna señal de que algo anda mal. Del
+        lado del método HTTP, en cambio, la regla es simple y no hay forma
+        de saltearla: si el pedido modificó algo y salió bien, el cache ya
+        no sirve.
+        """
+        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            if 200 <= respuesta.status_code < 400:
+                cache.invalidar_todo()
+        return respuesta
 
     return app
 

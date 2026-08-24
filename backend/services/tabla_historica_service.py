@@ -6,7 +6,7 @@ lo que ordena al grupo es el acumulado, y es lo que se mira para saber
 cómo viene cada uno.
 """
 from repositories import partido_repository, torneo_repository
-from services import tabla_service
+from services import cache, tabla_service
 
 # Cuántos puntos da cada puesto. La escala no es lineal a propósito:
 # la diferencia entre salir primero y segundo pesa más que entre quinto y
@@ -28,6 +28,11 @@ def puntos_de_puesto(puesto):
 
 
 def calcular_tabla_historica():
+    """Devuelve el acumulado, usando el cache si está vigente."""
+    return cache.obtener("tabla-historica", _calcular_tabla_historica)
+
+
+def _calcular_tabla_historica():
     """
     Suma lo que hizo cada jugador en todos los torneos finalizados.
 

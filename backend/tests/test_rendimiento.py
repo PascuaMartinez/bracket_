@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 import pytest
 
+from services import cache
 from services import tabla_historica_service as historica
 from services import tabla_service
 
@@ -37,6 +38,11 @@ def escenario(cantidad_torneos, cantidad_jugadores=8):
 
 
 def contar_consultas(cantidad_torneos):
+    # El cache se limpia antes de medir: con algo guardado no se
+    # consultaría nada, y la medición diría cero sin que eso signifique
+    # que el código consulta poco.
+    cache.invalidar_todo()
+
     torneos, participantes, partidos = escenario(cantidad_torneos)
     consultas = []
 
