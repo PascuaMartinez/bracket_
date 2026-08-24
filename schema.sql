@@ -173,6 +173,11 @@ CREATE TABLE torneo_jugador_grupo (
     grupo_id INT NOT NULL,
     -- NULL mientras la fase de grupos no terminó: todavía no se sabe.
     clasificado BOOLEAN NULL,
+    -- Cuando el organizador decide a mano quién pasa, en vez de que salga
+    -- de la tabla. Se marca para poder distinguirlo después: un
+    -- clasificado forzado dice algo distinto de uno que ganó su lugar.
+    clasificacion_forzada BOOLEAN NOT NULL DEFAULT FALSE,
+    observacion TEXT NULL,
     PRIMARY KEY (torneo_jugador_id, grupo_id),
     FOREIGN KEY (torneo_jugador_id) REFERENCES torneo_jugador(id),
     FOREIGN KEY (grupo_id) REFERENCES grupo(id)

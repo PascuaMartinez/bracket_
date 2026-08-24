@@ -23,7 +23,11 @@ def obtener_grupos(torneo_id):
             for j in grupo_repository.obtener_jugadores(grupo["id"])
         }
         for fila in tabla:
+            # None significa "sin resolver": la fase terminó pero quedó un
+            # empate en el corte esperando una decisión. Es distinto de
+            # False, que es "no clasificó".
             fila["clasificado"] = clasificados.get(fila["jugador_id"])
+            fila["sin_resolver"] = fila["clasificado"] is None
 
         grupos.append({"id": grupo["id"], "nombre": grupo["nombre"], "tabla": tabla})
     return grupos

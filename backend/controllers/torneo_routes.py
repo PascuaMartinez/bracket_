@@ -44,6 +44,21 @@ def grupos(torneo_id):
         return jsonify({"error": str(e)}), 404
 
 
+@torneo_bp.route("/<int:torneo_id>/grupos/<int:grupo_id>/resolver", methods=["POST"])
+def resolver_empate(torneo_id, grupo_id):
+    """Decide a mano si un jugador clasifica, cuando quedó un empate."""
+    from services import partido_service
+
+    datos = request.get_json(silent=True) or {}
+    partido_service.resolver_empate(
+        torneo_id, grupo_id,
+        datos.get("jugador_id"),
+        bool(datos.get("clasifica")),
+        datos.get("observacion"),
+    )
+    return "", 204
+
+
 @torneo_bp.route("/<int:torneo_id>/imagen", methods=["GET"])
 def imagen(torneo_id):
     """La tabla del torneo como PNG, para compartir."""

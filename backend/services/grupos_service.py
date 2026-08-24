@@ -85,3 +85,36 @@ def nombre_de_grupo(indice):
     if indice < 26:
         return f"Grupo {chr(ord('A') + indice)}"
     return f"Grupo {indice + 1}"
+
+
+def detectar_empate_en_el_corte(tabla, cupos):
+    """
+    Si hay empate justo en la línea de clasificación.
+
+    El caso: clasifican 2 de un grupo, y el segundo y el tercero terminaron
+    con los mismos puntos. La tabla los muestra en algún orden, pero ese
+    orden no lo decidió el torneo -- lo decidió un criterio de desempate
+    que ninguno de los dos jugó.
+
+    Devuelve None si no hay empate. Si lo hay, devuelve el bloque completo
+    de empatados y cuántos lugares se reparten entre ellos. Se devuelve el
+    bloque entero y no solo los dos de la frontera porque el empate puede
+    ser de tres o más, y resolverlo entre dos dejaría afuera al tercero
+    que tenía el mismo derecho.
+    """
+    if cupos <= 0 or cupos >= len(tabla):
+        return None   # o no clasifica nadie, o clasifican todos
+
+    puntos_del_corte = tabla[cupos - 1]["puntos"]
+    if tabla[cupos]["puntos"] != puntos_del_corte:
+        return None   # el que quedó afuera tiene menos: no hay nada que resolver
+
+    empatados = [f for f in tabla if f["puntos"] == puntos_del_corte]
+    # Los que ya clasificaron con MÁS puntos que el corte no entran en la
+    # disputa: sus lugares están decididos.
+    ya_clasificados = sum(1 for f in tabla if f["puntos"] > puntos_del_corte)
+
+    return {
+        "empatados": empatados,
+        "lugares_en_disputa": cupos - ya_clasificados,
+    }

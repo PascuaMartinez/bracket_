@@ -164,3 +164,15 @@ def posponer(torneo_id, partido_id):
 def retomar(torneo_id, partido_id):
     torneos.retomar(partido_id)
     return redirect(url_for("torneo.jugar", torneo_id=torneo_id))
+
+
+@torneo_bp.route("/<int:torneo_id>/grupos/<int:grupo_id>/resolver", methods=["POST"])
+@auth.requiere_sesion
+def resolver_empate(torneo_id, grupo_id):
+    torneos.resolver_empate(
+        torneo_id, grupo_id,
+        int(request.form["jugador_id"]),
+        request.form.get("clasifica") == "si",
+        request.form.get("observacion") or None,
+    )
+    return redirect(url_for("torneo.detalle", torneo_id=torneo_id))

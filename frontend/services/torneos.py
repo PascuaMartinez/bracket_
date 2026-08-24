@@ -51,6 +51,14 @@ def retomar(partido_id):
     return api.post(f"/partidos/{partido_id}/retomar", {})
 
 
+def resolver_empate(torneo_id, grupo_id, jugador_id, clasifica, observacion=None):
+    return api.post(f"/torneos/{torneo_id}/grupos/{grupo_id}/resolver", {
+        "jugador_id": jugador_id,
+        "clasifica": clasifica,
+        "observacion": observacion,
+    })
+
+
 def crear(datos):
     return api.post("/torneos", datos)
 

@@ -35,9 +35,25 @@
     {# Los que clasificaron van marcados. clasificado en None significa
        que la fase todavía no terminó, que es distinto de no haber
        clasificado. #}
-    <tr class="{{ 'fila-clasificado' if fila.clasificado }}">
+    <tr class="{{ 'fila-clasificado' if fila.clasificado }}{{ ' fila-sin-resolver' if fila.sin_resolver }}">
       <td class="dato">{{ fila.puesto }}</td>
-      <td>{{ fila.nombre }}{% if fila.clasificado %} <span class="marca-clasificado">clasificó</span>{% endif %}</td>
+      <td>
+        {{ fila.nombre }}
+        {% if fila.clasificado %}<span class="marca-clasificado">clasificó</span>{% endif %}
+        {# Sin resolver: la fase terminó pero hay un empate en el corte y
+           el sistema no lo decide solo. #}
+        {% if fila.sin_resolver and hay_sesion() %}
+        <form method="post" class="linea-resolver"
+              action="{{ url_for('torneo.resolver_empate', torneo_id=torneo.id, grupo_id=grupo.id) }}">
+          <input type="hidden" name="jugador_id" value="{{ fila.jugador_id }}">
+          <input type="text" name="observacion" placeholder="Motivo (opcional)">
+          <button type="submit" name="clasifica" value="si" class="enlace-boton">Pasa</button>
+          <button type="submit" name="clasifica" value="no" class="enlace-peligro">No pasa</button>
+        </form>
+        {% elif fila.sin_resolver %}
+        <span class="marca-sin-resolver">empate sin resolver</span>
+        {% endif %}
+      </td>
       <td class="dato">{{ fila.pj }}</td>
       <td class="dato">{{ fila.pg }}</td>
       <td class="dato">{{ fila.pp }}</td>

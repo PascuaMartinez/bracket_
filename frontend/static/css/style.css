@@ -602,3 +602,19 @@ main { padding: 36px 0 64px; }
 .tarjeta-con-icono .titulo-seccion { margin: 0; }
 
 .formulario-suelto { margin: 18px 0 32px; }
+
+/* Empate sin resolver: se marca en ámbar, que es el color de "en curso".
+   No es un error -- es algo que espera una decisión. */
+.fila-sin-resolver { background: rgba(140, 106, 63, 0.07); }
+
+.marca-sin-resolver {
+  font-family: var(--font-dato);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-left: 6px;
+}
+
+.linea-resolver { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+.linea-resolver input { font-size: 13px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 3px; }

@@ -98,3 +98,37 @@ def obtener_clasificados(torneo_id):
     cursor.close()
     conn.close()
     return filas
+
+
+def forzar_clasificado(grupo_id, jugador_id, clasifica, observacion=None):
+    """Decide a mano si alguien pasa, y deja anotado el motivo."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """UPDATE torneo_jugador_grupo tjg
+           JOIN torneo_jugador tj ON tj.id = tjg.torneo_jugador_id
+           SET tjg.clasificado = %s, tjg.clasificacion_forzada = TRUE,
+               tjg.observacion = %s
+           WHERE tjg.grupo_id = %s AND tj.jugador_id = %s""",
+        (clasifica, observacion, grupo_id, jugador_id),
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
+def hay_indecisos(torneo_id):
+    """Si queda alguien sin resolver: la fase de grupos terminó pero su
+    clasificación sigue en NULL, esperando que se decida el empate."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """SELECT COUNT(*) FROM torneo_jugador_grupo tjg
+           JOIN grupo g ON g.id = tjg.grupo_id
+           WHERE g.torneo_id = %s AND tjg.clasificado IS NULL""",
+        (torneo_id,),
+    )
+    cantidad = cursor.fetchone()[0]
+    cursor.close()
+    conn.close()
+    return cantidad > 0

@@ -405,35 +405,34 @@ def _cerrar_fase_de_grupos(torneo):
     cupos = grupos_service.repartir_cupos(torneo.cupos_eliminacion, tamanos)
 
     clasificados = []
+    hubo_empate = False
+
     for grupo, cupos_del_grupo in zip(grupos, cupos):
         tabla = tabla_service.calcular_tabla_de_grupo(torneo.id, grupo["id"])
+
+        empate = grupos_service.detectar_empate_en_el_corte(tabla, cupos_del_grupo)
+        if empate is not None:
+            # No se resuelve solo. Desempatar por win rate o por orden
+            # alfabético sería decidir con un criterio que el torneo nunca
+            # jugó: los empatados hicieron exactamente lo mismo. Se deja
+            # sin marcar y el organizador decide -- jugando un desempate o
+            # a dedo.
+            hubo_empate = True
+            decididos = [f["jugador_id"] for f in tabla
+                         if f["puntos"] > empate["empatados"][0]["puntos"]]
+            grupo_repository.marcar_clasificados(grupo["id"], decididos)
+            continue
+
         pasan = [f["jugador_id"] for f in tabla[:cupos_del_grupo]]
         grupo_repository.marcar_clasificados(grupo["id"], pasan)
         clasificados.append(pasan)
 
-    # Se intercalan los grupos al sembrar: primero de A, primero de B,
-    # segundo de A, segundo de B. Así los que ganaron su grupo no se
-    # cruzan entre sí en la primera ronda del cuadro.
-    sembrados = _intercalar(clasificados)
+    # Con algún empate sin resolver no se puede sembrar: falta saber
+    # quiénes juegan el cuadro.
+    if hubo_empate:
+        return
 
-    cruces = bracket_service.sembrar_primera_ronda(sembrados)
-    orden = partido_repository.obtener_max_orden(torneo.id)
-    partidos = []
-    for jugador1, jugador2 in cruces:
-        orden += 1
-        es_pase_libre = jugador2 is None
-        partidos.append({
-            "torneo_id": torneo.id,
-            "jugador1_id": jugador1,
-            "jugador2_id": jugador2,
-            "orden": orden,
-            "jornada": None,
-            "ronda": 1,
-            "es_pase_libre": es_pase_libre,
-            "ganador_id": jugador1 if es_pase_libre else None,
-            "estado": "finalizado" if es_pase_libre else "pendiente",
-        })
-    partido_repository.crear_muchos(partidos, con_ronda=True)
+    _sembrar_cuadro(torneo)
 
 
 def _intercalar(listas):
@@ -447,3 +446,49 @@ def _intercalar(listas):
             if posicion < len(lista):
                 resultado.append(lista[posicion])
     return resultado
+
+
+def resolver_empate(torneo_id, grupo_id, jugador_id, clasifica, observacion=None):
+    """
+    Decide a mano si alguien clasifica.
+
+    Se usa cuando quedó un empate en el corte: el organizador resuelve
+    -- porque jugaron un desempate aparte, porque uno se fue, por lo que
+    sea -- y el sistema toma esa decisión como válida.
+
+    Queda marcado como forzado y con una observación. Un clasificado
+    decidido a dedo dice algo distinto de uno que ganó su lugar en la
+    cancha, y esa diferencia tiene que poder verse después.
+    """
+    grupo_repository.forzar_clasificado(grupo_id, jugador_id, clasifica, observacion)
+
+    # Si con esto ya no queda nadie sin resolver, el cuadro puede arrancar.
+    if not grupo_repository.hay_indecisos(torneo_id):
+        torneo = torneo_repository.obtener_por_id(torneo_id)
+        _sembrar_cuadro(torneo)
+
+
+def _sembrar_cuadro(torneo):
+    """Arma la primera ronda del cuadro con los que clasificaron."""
+    clasificados_por_grupo = {}
+    for fila in grupo_repository.obtener_clasificados(torneo.id):
+        clasificados_por_grupo.setdefault(fila["grupo_id"], []).append(fila["jugador_id"])
+
+    sembrados = _intercalar(list(clasificados_por_grupo.values()))
+    if len(sembrados) < 2:
+        return
+
+    cruces = bracket_service.sembrar_primera_ronda(sembrados)
+    orden = partido_repository.obtener_max_orden(torneo.id)
+    partidos = []
+    for jugador1, jugador2 in cruces:
+        orden += 1
+        es_pase_libre = jugador2 is None
+        partidos.append({
+            "torneo_id": torneo.id, "jugador1_id": jugador1, "jugador2_id": jugador2,
+            "orden": orden, "jornada": None, "ronda": 1,
+            "es_pase_libre": es_pase_libre,
+            "ganador_id": jugador1 if es_pase_libre else None,
+            "estado": "finalizado" if es_pase_libre else "pendiente",
+        })
+    partido_repository.crear_muchos(partidos, con_ronda=True)
