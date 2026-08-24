@@ -15,28 +15,36 @@
   <div class="campo">
     <label for="modo">Formato</label>
     <select id="modo" name="modo" required>
-      <option value="todos_contra_todos">Todos contra todos</option>
-      <option value="eliminacion">Eliminación directa</option>
-      <option value="rey_de_la_cancha">Rey de la cancha</option>
-      <option value="grupos_eliminacion">Grupos + eliminación</option>
+      {% for valor, etiqueta in [
+          ('todos_contra_todos', 'Todos contra todos'),
+          ('eliminacion', 'Eliminación directa'),
+          ('rey_de_la_cancha', 'Rey de la cancha'),
+          ('grupos_eliminacion', 'Grupos + eliminación')] %}
+      <option value="{{ valor }}" {{ 'selected' if form and form.modo == valor }}>{{ etiqueta }}</option>
+      {% endfor %}
     </select>
+    <p class="ayuda">
+      Cada formato pide datos distintos: al elegir uno aparecen los suyos.
+    </p>
   </div>
 
-  {# Cada formato pide datos propios. Se muestran todos y se aclara a
-     cuál pertenece cada uno: esconderlos según el formato elegido
-     necesitaría JavaScript, y el backend ignora los que no correspondan. #}
-  <div class="campo">
-    <label for="vidas_iniciales">Vidas por jugador <span class="tenue">(rey de la cancha)</span></label>
+  {# Cada campo declara a qué formato pertenece; el JavaScript muestra
+     solo los que corresponden. Marcarlos en el HTML y no en el script
+     hace que agregar un formato nuevo sea agregar un atributo, sin tocar
+     código. #}
+  <div class="campo" data-formato="rey_de_la_cancha" hidden>
+    <label for="vidas_iniciales">Vidas por jugador</label>
     <input type="number" id="vidas_iniciales" name="vidas_iniciales" min="1" value="3">
+    <p class="ayuda">Cuántas veces puede perder cada uno antes de quedar afuera.</p>
   </div>
 
-  <div class="campo">
-    <label for="cantidad_grupos">Cantidad de grupos <span class="tenue">(grupos + eliminación)</span></label>
+  <div class="campo" data-formato="grupos_eliminacion" hidden>
+    <label for="cantidad_grupos">Cantidad de grupos</label>
     <input type="number" id="cantidad_grupos" name="cantidad_grupos" min="2" value="2">
   </div>
 
-  <div class="campo">
-    <label for="cupos_eliminacion">Cuántos clasifican <span class="tenue">(grupos + eliminación)</span></label>
+  <div class="campo" data-formato="grupos_eliminacion" hidden>
+    <label for="cupos_eliminacion">Cuántos clasifican</label>
     <input type="number" id="cupos_eliminacion" name="cupos_eliminacion" min="2" value="4">
     <p class="ayuda">En total, contando todos los grupos. Si no se divide
        parejo, el cupo extra va al grupo más grande.</p>
@@ -64,4 +72,8 @@
 
   <button type="submit" class="boton">Crear torneo</button>
 </form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/formulario_torneo.js') }}"></script>
 {% endblock %}
