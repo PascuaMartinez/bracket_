@@ -8,6 +8,7 @@ Depende de que se haya registrado qué personaje usó cada uno al cargar el
 resultado, que es opcional. Las estadísticas que no tienen datos
 devuelven cero o lista vacía en vez de fallar.
 """
+from services import configuracion_service
 from repositories import (
     jugador_repository, partido_repository, peleador_repository, torneo_repository,
 )
@@ -29,13 +30,17 @@ def obtener_estadisticas(peleador_id):
 
     apariciones = _apariciones(peleador_id)
 
-    return {
-        "peleador_id": peleador_id,
-        "nombre": peleador.nombre,
+    estadisticas = {
         **_uso(apariciones),
         **_quien_lo_usa(apariciones),
         **_enfrentamientos(apariciones, peleador_id),
         **_rachas_y_barridas(apariciones),
+    }
+
+    return {
+        "peleador_id": peleador_id,
+        "nombre": peleador.nombre,
+        **configuracion_service.filtrar_ocultas(estadisticas, "peleador"),
     }
 
 

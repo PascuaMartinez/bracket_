@@ -12,7 +12,7 @@
 <body>
   <header class="encabezado">
     <div class="contenedor encabezado-interior">
-      <a class="marca" href="{{ url_for('inicio.index') }}">Bracket</a>
+      <a class="marca" href="{{ url_for('inicio.index') }}">{{ nombre_del_club() }}</a>
       <nav class="navegacion">
         <a href="{{ url_for('inicio.index') }}">Inicio</a>
         <a href="{{ url_for('torneo.listado') }}">Torneos</a>
@@ -22,7 +22,7 @@
       </nav>
       <div class="sesion">
         {% if hay_sesion() %}
-        <span class="tenue">{{ usuario_actual() }}</span>
+        <a href="{{ url_for('configuracion.index') }}" class="tenue">{{ usuario_actual() }}</a>
         <form method="post" action="{{ url_for('auth.logout') }}">
           <button type="submit" class="enlace-boton">Salir</button>
         </form>

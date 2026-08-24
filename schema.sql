@@ -182,3 +182,32 @@ CREATE TABLE torneo_jugador_grupo (
     FOREIGN KEY (torneo_jugador_id) REFERENCES torneo_jugador(id),
     FOREIGN KEY (grupo_id) REFERENCES grupo(id)
 );
+
+
+-- Configuración general del sistema. Una sola fila: los valores son del
+-- sistema entero, no de cada usuario.
+--
+-- Va como tabla con columnas propias y no como una tabla genérica de
+-- clave/valor. La genérica ahorra migraciones al agregar opciones, pero
+-- guarda todo como texto y deja de servir apenas hace falta validar algo
+-- o que un valor tenga tipo. Con pocas opciones que cambian poco, tener
+-- las columnas explícitas vale más.
+CREATE TABLE configuracion (
+    id INT PRIMARY KEY DEFAULT 1,
+    nombre_club VARCHAR(100) NOT NULL DEFAULT 'Bracket',
+    texto_inicio TEXT NULL,
+    texto_formatos TEXT NULL,
+    -- Una fila sola: el CHECK impide que alguien inserte una segunda y
+    -- deje al sistema sin saber cuál es la buena.
+    CONSTRAINT una_sola_fila CHECK (id = 1)
+);
+
+INSERT INTO configuracion (id) VALUES (1);
+
+
+-- Qué estadísticas se muestran. Solo se guardan las OCULTAS: así una
+-- estadística nueva aparece visible sin que haya que agregarle una fila,
+-- que es el comportamiento razonable por defecto.
+CREATE TABLE estadistica_oculta (
+    clave VARCHAR(80) PRIMARY KEY
+);

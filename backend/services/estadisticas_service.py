@@ -6,6 +6,7 @@ no un único resultado: preguntar "contra quién ganó más" puede tener dos
 respuestas legítimas si empató entre dos rivales, y elegir una arbitraria
 sería inventar un desempate que no existe.
 """
+from services import configuracion_service
 from repositories import jugador_repository, partido_repository, torneo_repository
 
 
@@ -35,13 +36,19 @@ def obtener_estadisticas(jugador_id):
             if jugador_id in (p.jugador1_id, p.jugador2_id):
                 partidos.append(p)
 
-    return {
-        "jugador_id": jugador_id,
-        "nombre": jugador.nombre,
+    estadisticas = {
         "torneos_jugados": _contar_torneos(partidos),
         **_record(partidos, jugador_id),
         **_rivales(partidos, jugador_id, nombres),
         "mejor_racha": _mejor_racha(partidos, jugador_id),
+    }
+
+    # La identidad no se filtra: sin nombre ni id, la respuesta no sirve
+    # para nada aunque se escondan todas las estadísticas.
+    return {
+        "jugador_id": jugador_id,
+        "nombre": jugador.nombre,
+        **configuracion_service.filtrar_ocultas(estadisticas, "jugador"),
     }
 
 

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Configuración · Bracket{% endblock %}
+
+{% block content %}
+<h1 class="titulo-pagina">Configuración</h1>
+
+{% if error %}<div class="aviso-error">{{ error }}</div>{% endif %}
+
+<h2 class="titulo-seccion">General</h2>
+<form method="post" class="panel formulario">
+  <div class="campo">
+    <label for="nombre_club">Nombre del club</label>
+    <input type="text" id="nombre_club" name="nombre_club" required
+           value="{{ config.nombre_club }}">
+    <p class="ayuda">Aparece en el encabezado y en las imágenes exportadas.</p>
+  </div>
+
+  <div class="campo">
+    <label for="texto_inicio">Texto de la pantalla de inicio</label>
+    <textarea id="texto_inicio" name="texto_inicio" rows="3">{{ config.texto_inicio or '' }}</textarea>
+  </div>
+
+  <div class="campo">
+    <label for="texto_formatos">Explicación de los formatos</label>
+    <textarea id="texto_formatos" name="texto_formatos" rows="6">{{ config.texto_formatos or '' }}</textarea>
+    <p class="ayuda">Se muestra a quien quiera entender cómo funciona cada formato.</p>
+  </div>
+
+  <button type="submit" class="boton">Guardar</button>
+</form>
+
+<h2 class="titulo-seccion">Estadísticas visibles</h2>
+<form method="post" action="{{ url_for('configuracion.guardar_estadisticas') }}"
+      class="panel formulario">
+  <p class="ayuda">Destildar una estadística la esconde de las pantallas. El
+     dato se sigue calculando, así que volver a mostrarla es inmediato.</p>
+
+  {% for grupo in ['Jugador', 'Personaje'] %}
+  <fieldset class="campo">
+    <legend>{{ grupo }}</legend>
+    {% for e in estadisticas if e.grupo == grupo %}
+    <label class="opcion">
+      <input type="checkbox" name="visibles" value="{{ e.clave }}"
+             {{ 'checked' if e.visible }}>
+      {{ e.nombre }}
+    </label>
+    {% endfor %}
+  </fieldset>
+  {% endfor %}
+
+  <button type="submit" class="boton">Guardar</button>
+</form>
+{% endblock %}

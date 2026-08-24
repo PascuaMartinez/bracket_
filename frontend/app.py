@@ -3,6 +3,7 @@ from flask import Flask
 import auth
 from config import Config
 from routes.auth_routes import auth_bp
+from routes.configuracion_routes import configuracion_bp
 from routes.inicio_routes import inicio_bp
 from routes.jugador_routes import jugador_bp
 from routes.peleador_routes import peleador_bp
@@ -26,6 +27,17 @@ def create_app():
     # Disponible en todas las plantillas: los botones de crear y editar
     # solo se muestran con sesión iniciada. No es la protección -- esa
     # está en las rutas -- sino no ofrecer acciones que van a rebotar.
+    def nombre_del_club():
+        """El nombre configurado, o el del sistema si el backend no
+        responde. Que el encabezado rompa la página entera por no poder
+        leer un nombre sería desproporcionado."""
+        try:
+            from services import configuracion
+            return configuracion.obtener().get("nombre_club") or "Bracket"
+        except Exception:
+            return "Bracket"
+
+    app.jinja_env.globals["nombre_del_club"] = nombre_del_club
     app.jinja_env.globals["hay_sesion"] = auth.hay_sesion
     app.jinja_env.globals["usuario_actual"] = auth.usuario_actual
 
@@ -81,6 +93,7 @@ def create_app():
         return "?"
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(configuracion_bp)
     app.register_blueprint(inicio_bp)
     app.register_blueprint(jugador_bp)
     app.register_blueprint(peleador_bp)

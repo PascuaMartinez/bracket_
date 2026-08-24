@@ -7,7 +7,9 @@ guardó la anterior y el resultado dependería del orden en que se corran.
 """
 import pytest
 
-from services import cache
+from unittest.mock import patch
+
+from services import cache, configuracion_service
 
 
 @pytest.fixture(autouse=True)
@@ -20,3 +22,16 @@ def cache_limpio():
     cache.invalidar_todo()
     yield
     cache.invalidar_todo()
+
+
+@pytest.fixture(autouse=True)
+def sin_estadisticas_ocultas():
+    """Por defecto no hay ninguna oculta.
+
+    El filtro de estadísticas consulta la base, y las pruebas del cálculo
+    no deberían necesitar una base corriendo solo para averiguar que no
+    hay nada escondido. Las pruebas que sí quieran probar el filtro pueden
+    sustituirlo por su cuenta."""
+    with patch.object(configuracion_service.configuracion_repository,
+                      "obtener_ocultas", return_value=set()):
+        yield
