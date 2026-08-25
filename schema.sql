@@ -16,7 +16,17 @@ CREATE TABLE jugador (
     -- tamaño, encarece los backups y obliga a que cada lectura del
     -- jugador arrastre la imagen entera aunque no se vaya a mostrar.
     imagen_vertical_path VARCHAR(255) NULL,
-    imagen_icono_path VARCHAR(255) NULL
+    imagen_icono_path VARCHAR(255) NULL,
+    -- Un jugador oculto desaparece de los listados, del ranking y de las
+    -- estadísticas que nombran a alguien, pero sus partidos siguen
+    -- existiendo: un torneo es un hecho que ocurrió, y borrar a un
+    -- participante dejaría partidos con un solo jugador.
+    --
+    -- Se oculta en vez de borrarse porque el dato es un nombre de pila y
+    -- equivocarse de botón es más probable que necesitar que el nombre
+    -- desaparezca de la base. Un borrado real, si alguna vez hace falta,
+    -- es una operación aparte.
+    oculto BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- Los personajes del juego. Se modelan como entidad propia y no como un

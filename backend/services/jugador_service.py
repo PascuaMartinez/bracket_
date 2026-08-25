@@ -21,8 +21,8 @@ class JugadorInvalidoError(Exception):
     pass
 
 
-def listar_jugadores():
-    return [j.to_dict() for j in jugador_repository.obtener_todos()]
+def listar_jugadores(incluir_ocultos=False):
+    return [j.to_dict() for j in jugador_repository.obtener_todos(incluir_ocultos)]
 
 
 def obtener_jugador(jugador_id):
@@ -46,7 +46,40 @@ def actualizar_jugador(jugador_id, nombre, fecha_nacimiento=None):
 
 
 def eliminar_jugador(jugador_id):
-    if not jugador_repository.eliminar(jugador_id):
+    """
+    Saca a un jugador del sistema.
+
+    Si nunca jugó, se borra de verdad: no hay historia que preservar y
+    dejarlo oculto sería juntar basura.
+
+    Si jugó, se oculta. Borrarlo dejaría partidos con un solo
+    participante, y un torneo es un hecho que ocurrió: la final de enero
+    la jugaron dos personas, aunque después una se haya ido.
+
+    Devuelve qué se hizo, para que quien llama pueda decirlo.
+    """
+    if jugador_repository.obtener_por_id(jugador_id) is None:
+        raise JugadorNoEncontradoError(f"No existe el jugador {jugador_id}")
+
+    # Ocultar a alguien en medio de un torneo dejaría la pantalla de
+    # cargar resultado mostrando un partido contra un fantasma.
+    if jugador_repository.esta_en_torneo_sin_terminar(jugador_id):
+        raise JugadorInvalidoError(
+            "Está participando de un torneo sin terminar. "
+            "Terminá ese torneo antes de sacarlo."
+        )
+
+    if jugador_repository.tiene_partidos(jugador_id):
+        jugador_repository.cambiar_visibilidad(jugador_id, True)
+        return "ocultado"
+
+    jugador_repository.eliminar(jugador_id)
+    return "eliminado"
+
+
+def mostrar_jugador(jugador_id):
+    """Devuelve a un jugador oculto al sistema."""
+    if not jugador_repository.cambiar_visibilidad(jugador_id, False):
         raise JugadorNoEncontradoError(f"No existe el jugador {jugador_id}")
 
 

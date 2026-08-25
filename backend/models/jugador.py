@@ -9,12 +9,14 @@ class Jugador:
     """
 
     def __init__(self, id, nombre, fecha_nacimiento=None,
-                 imagen_vertical_path=None, imagen_icono_path=None):
+                 imagen_vertical_path=None, imagen_icono_path=None,
+                 oculto=False):
         self.id = id
         self.nombre = nombre
         self.fecha_nacimiento = fecha_nacimiento
         self.imagen_vertical_path = imagen_vertical_path
         self.imagen_icono_path = imagen_icono_path
+        self.oculto = oculto
 
     def to_dict(self):
         """Lo que viaja por la API. La fecha se serializa a texto porque
@@ -27,6 +29,7 @@ class Jugador:
             ),
             "imagen_vertical": self.imagen_vertical_path,
             "imagen_icono": self.imagen_icono_path,
+            "oculto": self.oculto,
         }
 
     @staticmethod
@@ -42,4 +45,5 @@ class Jugador:
             fecha_nacimiento=row.get("fecha_nacimiento"),
             imagen_vertical_path=row.get("imagen_vertical_path"),
             imagen_icono_path=row.get("imagen_icono_path"),
+            oculto=bool(row.get("oculto", False)),
         )

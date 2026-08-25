@@ -15,13 +15,19 @@ from database.db import get_connection
 from models.jugador import Jugador
 
 
-def obtener_todos():
+def obtener_todos(incluir_ocultos=False):
+    """Por defecto solo los activos.
+
+    Los ocultos se piden explícitamente: así ninguna pantalla los muestra
+    por olvido, que es lo contrario de lo que se busca al ocultar a
+    alguien."""
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
     # Ordenado por nombre desde la consulta y no en Python: la base lo
     # hace mejor, y así todas las pantallas muestran el mismo orden sin
     # tener que acordarse de ordenar.
-    cursor.execute("SELECT * FROM jugador ORDER BY nombre ASC")
+    filtro = "" if incluir_ocultos else "WHERE oculto = FALSE"
+    cursor.execute(f"SELECT * FROM jugador {filtro} ORDER BY nombre ASC")
     filas = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -94,3 +100,48 @@ def actualizar_imagen(jugador_id, campo, ruta):
     conn.commit()
     cursor.close()
     conn.close()
+
+
+def cambiar_visibilidad(jugador_id, oculto):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE jugador SET oculto = %s WHERE id = %s", (oculto, jugador_id))
+    conn.commit()
+    filas = cursor.rowcount
+    cursor.close()
+    conn.close()
+    return filas > 0
+
+
+def tiene_partidos(jugador_id):
+    """Si participó de algún partido. Decide si se puede borrar de verdad
+    o hay que ocultarlo para no romper la historia de esos torneos."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT COUNT(*) FROM partido WHERE jugador1_id = %s OR jugador2_id = %s",
+        (jugador_id, jugador_id),
+    )
+    cantidad = cursor.fetchone()[0]
+    cursor.close()
+    conn.close()
+    return cantidad > 0
+
+
+def esta_en_torneo_sin_terminar(jugador_id):
+    """Si participa de un torneo que todavía se está jugando.
+
+    Ocultar a alguien en medio de un torneo dejaría la pantalla de cargar
+    resultado mostrando un partido contra un fantasma."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """SELECT COUNT(*) FROM torneo_jugador tj
+           JOIN torneo t ON t.id = tj.torneo_id
+           WHERE tj.jugador_id = %s AND t.estado <> 'finalizado'""",
+        (jugador_id,),
+    )
+    cantidad = cursor.fetchone()[0]
+    cursor.close()
+    conn.close()
+    return cantidad > 0

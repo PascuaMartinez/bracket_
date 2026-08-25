@@ -20,6 +20,7 @@ def calcular(torneos, tablas_por_torneo):
     se prueba acá es cómo se acumulan los puntos, no de dónde salen los
     datos."""
     with patch.object(historica.torneo_repository, "obtener_todos", return_value=torneos), \
+         patch.object(historica.jugador_repository, "obtener_todos", return_value=[]), \
          patch.object(historica.torneo_repository, "obtener_participantes_de_varios",
                       return_value={}), \
          patch.object(historica.partido_repository, "obtener_de_varios_torneos",

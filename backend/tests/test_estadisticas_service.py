@@ -17,7 +17,10 @@ def partido(torneo_id, jugador1, jugador2, ganador, orden=1, es_pase_libre=False
 
 def calcular(partidos, jugador_id=1, nombres=None):
     nombres = nombres or {1: "Ana", 2: "Beto", 3: "Caro"}
-    jugadores = [SimpleNamespace(id=i, nombre=n) for i, n in nombres.items()]
+    # oculto=False: el cálculo consulta ese atributo para excluir a los
+    # ocultos de las listas de rivales.
+    jugadores = [SimpleNamespace(id=i, nombre=n, oculto=False)
+                 for i, n in nombres.items()]
     torneos = [
         SimpleNamespace(id=1, estado="finalizado", nombre="Enero",
                         fecha=date(2026, 1, 1)),

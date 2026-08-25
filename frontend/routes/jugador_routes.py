@@ -2,14 +2,27 @@
 import auth
 from flask import Blueprint, redirect, render_template, request, url_for
 
-from services import api, navegacion
+from services import api, listado_jugadores, navegacion
 
 jugador_bp = Blueprint("jugador", __name__, url_prefix="/jugadores")
 
 
 @jugador_bp.route("")
 def listado():
-    return render_template("jugadores/listado.html", jugadores=api.get("/jugadores"))
+    # Los controles viajan en la dirección: así el listado ordenado se
+    # puede compartir o guardar, y volver atrás no pierde el orden.
+    orden = request.args.get("orden", listado_jugadores.ORDEN_POR_DEFECTO)
+    descendente = request.args.get("dir") == "desc"
+    ver_ocultos = request.args.get("ocultos") == "si"
+
+    return render_template(
+        "jugadores/listado.html",
+        jugadores=listado_jugadores.obtener(orden, descendente, ver_ocultos),
+        ordenes=listado_jugadores.ORDENES,
+        orden=orden,
+        descendente=descendente,
+        ver_ocultos=ver_ocultos,
+    )
 
 
 @jugador_bp.route("/nuevo", methods=["GET", "POST"])
@@ -53,8 +66,24 @@ def editar(jugador_id):
 def eliminar(jugador_id):
     """Solo por POST y nunca por GET: un enlace que borra puede
     dispararse solo si algo precarga la página."""
-    api.delete(f"/jugadores/{jugador_id}")
+    try:
+        api.delete(f"/jugadores/{jugador_id}")
+    except api.ErrorDeApi as e:
+        # El backend rechaza sacar a alguien de un torneo en curso: ese
+        # motivo tiene que llegar a quien lo intentó.
+        return render_template("jugadores/detalle.html",
+                               jugador=api.get(f"/jugadores/{jugador_id}"),
+                               estadisticas=api.get(f"/jugadores/{jugador_id}/estadisticas"),
+                               anterior=None, siguiente=None, error=str(e)), 400
+
     return redirect(url_for("jugador.listado"))
+
+
+@jugador_bp.route("/<int:jugador_id>/mostrar", methods=["POST"])
+@auth.requiere_sesion
+def mostrar(jugador_id):
+    api.post(f"/jugadores/{jugador_id}/mostrar", {})
+    return redirect(url_for("jugador.listado", ocultos="si"))
 
 
 @jugador_bp.route("/<int:jugador_id>")

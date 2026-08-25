@@ -5,24 +5,64 @@
 <div class="fila-titulo">
   <div>
     <h1 class="titulo-pagina">Jugadores</h1>
-    <p class="subtitulo">{{ jugadores | length }} registrado{{ 's' if jugadores | length != 1 }}.</p>
+    <p class="subtitulo">{{ jugadores | length }} en la lista.</p>
   </div>
   {% if hay_sesion() %}<a class="boton" href="{{ url_for('jugador.nuevo') }}">Nuevo jugador</a>{% endif %}
 </div>
 
+{# Los controles van por GET: el listado ordenado queda en la dirección y
+   se puede compartir o volver a él con el botón de atrás. #}
+<form method="get" class="panel controles-listado">
+  <div class="campo">
+    <label for="orden">Ordenar por</label>
+    <select id="orden" name="orden" onchange="this.form.submit()">
+      {% for clave, datos in ordenes.items() %}
+      <option value="{{ clave }}" {{ 'selected' if orden == clave }}>{{ datos.etiqueta }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="campo">
+    <label for="dir">Dirección</label>
+    <select id="dir" name="dir" onchange="this.form.submit()">
+      <option value="asc" {{ 'selected' if not descendente }}>Ascendente</option>
+      <option value="desc" {{ 'selected' if descendente }}>Descendente</option>
+    </select>
+  </div>
+
+  {% if hay_sesion() %}
+  <label class="opcion control-ocultos">
+    <input type="checkbox" name="ocultos" value="si" {{ 'checked' if ver_ocultos }}
+           onchange="this.form.submit()">
+    Ver jugadores ocultos
+  </label>
+  {% endif %}
+</form>
+
 {% if jugadores %}
 <div class="grilla">
   {% for jugador in jugadores %}
-  <a class="panel panel-enlace" href="{{ url_for('jugador.detalle', jugador_id=jugador.id) }}">
+  {# Los ocultos se muestran atenuados: se ven, pero se nota que no son
+     parte del sistema activo. #}
+  <a class="panel panel-enlace {{ 'panel-oculto' if jugador.oculto }}"
+     href="{{ url_for('jugador.detalle', jugador_id=jugador.id) }}">
     <div class="tarjeta-con-icono">
       {% if jugador.imagen_icono %}
       <img class="icono" src="{{ jugador.imagen_icono | url_imagen }}" alt="">
       {% else %}
-      {# Sin imagen, la inicial: mantiene la alineación de la lista en vez
-         de dejar un hueco. #}
       <span class="icono icono-inicial">{{ jugador.nombre[0] | upper }}</span>
       {% endif %}
-      <p class="titulo-seccion">{{ jugador.nombre }}</p>
+      <div>
+        <p class="titulo-seccion">
+          {{ jugador.nombre }}
+          {% if jugador.oculto %}<span class="marca-oculto">oculto</span>{% endif %}
+        </p>
+        {% if jugador.pj %}
+        <p class="dato tenue">
+          {{ jugador.pj }} PJ · {{ (jugador.win_rate * 100) | round | int }}% · {{ jugador.rating }}
+        </p>
+        {% endif %}
+      </div>
     </div>
   </a>
   {% endfor %}
@@ -30,7 +70,7 @@
 {% else %}
 <div class="vacio">
   <p>Todavía no hay jugadores cargados.</p>
-  <p><a href="{{ url_for('jugador.nuevo') }}">Agregar el primero</a></p>
+  {% if hay_sesion() %}<p><a href="{{ url_for('jugador.nuevo') }}">Agregar el primero</a></p>{% endif %}
 </div>
 {% endif %}
 {% endblock %}

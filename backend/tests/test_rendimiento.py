@@ -54,6 +54,7 @@ def contar_consultas(cantidad_torneos):
 
     with patch.object(historica.torneo_repository, "obtener_todos",
                       side_effect=registrar(torneos)), \
+         patch.object(historica.jugador_repository, "obtener_todos", return_value=[]), \
          patch.object(historica.torneo_repository, "obtener_participantes_de_varios",
                       side_effect=registrar({t.id: participantes for t in torneos})), \
          patch.object(historica.partido_repository, "obtener_de_varios_torneos",

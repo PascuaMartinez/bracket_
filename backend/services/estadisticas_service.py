@@ -22,7 +22,11 @@ def obtener_estadisticas(jugador_id):
     # Solo los torneos terminados: uno a medio jugar daría estadísticas
     # que cambian con cada resultado que se carga.
     torneos = [t for t in torneo_repository.obtener_todos() if t.estado == "finalizado"]
-    nombres = {j.id: j.nombre for j in jugador_repository.obtener_todos()}
+    # Se traen TODOS, incluidos los ocultos: sus partidos siguen contando
+    # para el récord de los demás. Lo que cambia es que no se los nombre.
+    todos = jugador_repository.obtener_todos(incluir_ocultos=True)
+    nombres = {j.id: j.nombre for j in todos}
+    ocultos = {j.id for j in todos if j.oculto}
 
     partidos = []
     for torneo in torneos:
@@ -39,7 +43,7 @@ def obtener_estadisticas(jugador_id):
     estadisticas = {
         "torneos_jugados": _contar_torneos(partidos),
         **_record(partidos, jugador_id),
-        **_rivales(partidos, jugador_id, nombres),
+        **_rivales(partidos, jugador_id, nombres, ocultos),
         **_rachas(partidos, jugador_id),
         **_por_rondas(partidos, jugador_id),
         **_trayectoria(jugador_id, torneos, partidos),
@@ -69,8 +73,15 @@ def _record(partidos, jugador_id):
     }
 
 
-def _rivales(partidos, jugador_id, nombres):
-    """Con quién jugó, contra quién ganó más y contra quién perdió más."""
+def _rivales(partidos, jugador_id, nombres, ocultos=frozenset()):
+    """
+    Con quién jugó, contra quién ganó más y contra quién perdió más.
+
+    Los rivales ocultos quedan afuera de estas listas. Sus partidos SÍ
+    cuentan para el récord -- perder cinco veces es perder cinco veces,
+    se haya ido el rival o no -- pero nombrarlos acá les daría presencia
+    a alguien que justamente se sacó del sistema.
+    """
     por_rival = {}
     for p in partidos:
         rival_id = p.jugador2_id if p.jugador1_id == jugador_id else p.jugador1_id
@@ -85,7 +96,7 @@ def _rivales(partidos, jugador_id, nombres):
         else:
             datos["perdidos"] += 1
 
-    rivales = list(por_rival.values())
+    rivales = [r for r in por_rival.values() if r["jugador_id"] not in ocultos]
     for r in rivales:
         r["win_rate"] = round(r["ganados"] / r["jugados"], 3) if r["jugados"] else 0
 

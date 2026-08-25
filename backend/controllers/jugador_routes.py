@@ -18,7 +18,9 @@ jugador_bp = Blueprint("jugador", __name__, url_prefix="/jugadores")
 
 @jugador_bp.route("", methods=["GET"])
 def listar():
-    return jsonify(jugador_service.listar_jugadores()), 200
+    # Los ocultos se piden explícitamente con ?incluir_ocultos=si
+    incluir = request.args.get("incluir_ocultos") == "si"
+    return jsonify(jugador_service.listar_jugadores(incluir)), 200
 
 
 @jugador_bp.route("/<int:jugador_id>", methods=["GET"])
@@ -93,9 +95,21 @@ def actualizar(jugador_id):
 @jugador_bp.route("/<int:jugador_id>", methods=["DELETE"])
 def eliminar(jugador_id):
     try:
-        jugador_service.eliminar_jugador(jugador_id)
-        # 204: salió bien y no hay nada que devolver.
-        return "", 204
+        # Se devuelve qué se hizo -- borrado u ocultado -- porque son
+        # cosas distintas y quien lo pidió tiene derecho a saber cuál pasó.
+        resultado = jugador_service.eliminar_jugador(jugador_id)
+        return jsonify({"resultado": resultado}), 200
+    except jugador_service.JugadorInvalidoError as e:
+        return jsonify({"error": str(e)}), 400
+    except jugador_service.JugadorNoEncontradoError as e:
+        return jsonify({"error": str(e)}), 404
+
+
+@jugador_bp.route("/<int:jugador_id>/mostrar", methods=["POST"])
+def mostrar(jugador_id):
+    try:
+        jugador_service.mostrar_jugador(jugador_id)
+        return jsonify(jugador_service.obtener_jugador(jugador_id)), 200
     except jugador_service.JugadorNoEncontradoError as e:
         return jsonify({"error": str(e)}), 404
 

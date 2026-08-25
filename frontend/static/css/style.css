@@ -685,3 +685,49 @@ main { padding: 36px 0 64px; }
    al estilo por defecto del navegador -- y el campo se muestra igual: el
    script lo marca como oculto y no pasa nada visible. */
 [hidden] { display: none !important; }
+
+/* --- Controles del listado --- */
+
+.controles-listado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+
+.control-ocultos { padding-bottom: 8px; }
+
+/* Los jugadores ocultos: atenuados pero legibles. Se ven, y se nota que
+   no son parte del sistema activo. */
+.panel-oculto { opacity: 0.45; }
+.panel-oculto:hover { opacity: 0.7; }
+
+.marca-oculto {
+  font-family: var(--font-dato);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-left: 6px;
+}
+
+/* --- Diálogos --- */
+
+.dialogo {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 24px;
+  max-width: 460px;
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--font-texto);
+}
+
+.dialogo::backdrop { background: rgba(28, 31, 38, 0.45); }
+.dialogo p { margin: 0 0 12px; }
+.dialogo .acciones { margin-top: 20px; }
+.dialogo form { margin: 0; }

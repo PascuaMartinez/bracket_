@@ -2,6 +2,7 @@
 {% block title %}{{ jugador.nombre }} · Bracket{% endblock %}
 
 {% block content %}
+{% if error %}<div class="aviso-error">{{ error }}</div>{% endif %}
 {% with url_anterior=url_for("jugador.detalle", jugador_id=anterior.id) if anterior else None,
         url_siguiente=url_for("jugador.detalle", jugador_id=siguiente.id) if siguiente else None %}
 {% include "_navegacion.html" %}
@@ -97,9 +98,41 @@
 {% endif %}
 
 {% if hay_sesion() %}
-<form method="post" action="{{ url_for('jugador.eliminar', jugador_id=jugador.id) }}"
-      onsubmit="return confirm('¿Eliminar a {{ jugador.nombre }}? No se puede deshacer.')">
-  <button type="submit" class="boton-peligro">Eliminar jugador</button>
+{% if jugador.oculto %}
+<form method="post" action="{{ url_for('jugador.mostrar', jugador_id=jugador.id) }}">
+  <button type="submit" class="boton-secundario">Volver a mostrar</button>
 </form>
+{% else %}
+<button type="button" class="boton-peligro" onclick="document.getElementById('dialogo-sacar').showModal()">
+  Sacar del sistema
+</button>
+
+{# Un diálogo propio y no el confirm del navegador: ese se ve como un
+   cartel del sistema operativo, rompe la estética, y en algunos
+   navegadores se puede desactivar -- y ahí la acción pasaría sin
+   ninguna confirmación. #}
+<dialog id="dialogo-sacar" class="dialogo">
+  <h2 class="titulo-seccion">Sacar a {{ jugador.nombre }}</h2>
+  <p>
+    Deja de aparecer en los listados, en el ranking y en las estadísticas
+    que nombran rivales.
+  </p>
+  <p class="ayuda">
+    Sus partidos no se borran: un torneo es algo que pasó, y borrarlos
+    dejaría partidos con un solo participante. Van a figurar como una
+    participación sin nombre.
+  </p>
+  <p class="ayuda">
+    Si nunca jugó ningún partido, se elimina directamente.
+  </p>
+  <div class="acciones">
+    <form method="post" action="{{ url_for('jugador.eliminar', jugador_id=jugador.id) }}">
+      <button type="submit" class="boton-peligro">Sacar del sistema</button>
+    </form>
+    <button type="button" class="boton-secundario"
+            onclick="document.getElementById('dialogo-sacar').close()">Cancelar</button>
+  </div>
+</dialog>
+{% endif %}
 {% endif %}
 {% endblock %}

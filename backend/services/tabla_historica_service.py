@@ -5,7 +5,7 @@ Es el producto real del sistema. Un torneo puntual se olvida a la semana;
 lo que ordena al grupo es el acumulado, y es lo que se mira para saber
 cómo viene cada uno.
 """
-from repositories import partido_repository, torneo_repository
+from repositories import jugador_repository, partido_repository, torneo_repository
 from services import cache, rating_service, tabla_service
 
 # Cuántos puntos da cada puesto. La escala no es lineal a propósito:
@@ -83,7 +83,12 @@ def _calcular_tabla_historica():
                 "puesto": fila["puesto"],
             })
 
-    filas = list(acumulado.values())
+    # Los ocultos salen del ranking, pero sus partidos ya alimentaron el
+    # cálculo de los demás: el rating de quien les ganó tiene en cuenta
+    # esas victorias aunque el rival no figure en la tabla.
+    ocultos = {j.id for j in jugador_repository.obtener_todos(incluir_ocultos=True)
+               if j.oculto}
+    filas = [f for f in acumulado.values() if f["jugador_id"] not in ocultos]
 
     # El rating se calcula sobre todos los partidos juntos, no torneo por
     # torneo: el modelo necesita el historial completo para estimar bien
