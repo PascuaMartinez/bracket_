@@ -680,7 +680,8 @@ main { padding: 36px 0 64px; }
   .flecha-nombre { display: none; }
 }
 
-/* El atributo hidden tiene que ganarle a cualquier display.
-   Sin esto, .campo { display: flex } lo sobrescribe y el campo se
-   muestra igual: el script lo marca como oculto y no pasa nada. */
+/* El atributo hidden tiene que ganarle a cualquier regla de display.
+   Sin esto, .campo { display: flex } lo sobrescribe -- una clase le gana
+   al estilo por defecto del navegador -- y el campo se muestra igual: el
+   script lo marca como oculto y no pasa nada visible. */
 [hidden] { display: none !important; }
