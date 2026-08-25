@@ -4,12 +4,18 @@
 {% block content %}
 <h1 class="titulo-pagina">Historial</h1>
 <p class="subtitulo">El acumulado de todos los torneos finalizados.</p>
+<p class="ayuda">
+  Los <strong>puntos</strong> premian los resultados en torneos. El
+  <strong>rating</strong> estima la fuerza de cada uno teniendo en cuenta
+  contra quién jugó: ganarle a alguien fuerte suma más que ganarle a
+  alguien flojo.
+</p>
 
 {% if tabla %}
 <div class="tabla-contenedor">
 <table class="tabla">
   <thead>
-    <tr><th>#</th><th>Jugador</th><th>Puntos</th><th>Torneos</th><th>PJ</th><th>PG</th><th>Win rate</th><th>Recorrido</th></tr>
+    <tr><th>#</th><th>Jugador</th><th>Puntos</th><th>Rating</th><th>Torneos</th><th>PJ</th><th>PG</th><th>Win rate</th><th>Recorrido</th></tr>
   </thead>
   <tbody>
     {% for fila in tabla %}
@@ -17,6 +23,9 @@
       <td class="dato">{{ fila.puesto }}</td>
       <td>{{ fila.nombre }}</td>
       <td class="dato destacado">{{ fila.puntos }}</td>
+      {# El rating estima la fuerza real: a diferencia de los puntos, tiene
+         en cuenta contra quién se ganó cada partido. #}
+      <td class="dato">{{ fila.rating }}</td>
       <td class="dato">{{ fila.torneos_jugados }}</td>
       <td class="dato">{{ fila.pj }}</td>
       <td class="dato">{{ fila.pg }}</td>

@@ -6,7 +6,7 @@ lo que ordena al grupo es el acumulado, y es lo que se mira para saber
 cómo viene cada uno.
 """
 from repositories import partido_repository, torneo_repository
-from services import cache, tabla_service
+from services import cache, rating_service, tabla_service
 
 # Cuántos puntos da cada puesto. La escala no es lineal a propósito:
 # la diferencia entre salir primero y segundo pesa más que entre quinto y
@@ -84,8 +84,18 @@ def _calcular_tabla_historica():
             })
 
     filas = list(acumulado.values())
+
+    # El rating se calcula sobre todos los partidos juntos, no torneo por
+    # torneo: el modelo necesita el historial completo para estimar bien
+    # quién enfrentó a quién.
+    ratings = rating_service.calcular_ratings(
+        [f["jugador_id"] for f in filas],
+        _enfrentamientos(partidos_por_torneo),
+    )
+
     for fila in filas:
         fila["win_rate"] = round(fila["pg"] / fila["pj"], 3) if fila["pj"] else 0
+        fila["rating"] = ratings.get(fila["jugador_id"], rating_service.RATING_BASE)
 
     # Puntos, después puntos de victoria, después win rate. Tres criterios
     # porque con dos los empates son frecuentes: si dos jugaron los mismos
@@ -107,3 +117,17 @@ def _asignar_puestos(filas_ordenadas):
             puesto_actual += 1
             clave_anterior = clave
         fila["puesto"] = puesto_actual
+
+
+def _enfrentamientos(partidos_por_torneo):
+    """Los partidos como pares (ganador, perdedor), que es lo único que el
+    modelo necesita saber."""
+    pares = []
+    for partidos in partidos_por_torneo.values():
+        for p in partidos:
+            if p.estado != "finalizado" or p.ganador_id is None or p.es_pase_libre:
+                continue
+            perdedor = p.jugador2_id if p.ganador_id == p.jugador1_id else p.jugador1_id
+            if perdedor is not None:
+                pares.append((p.ganador_id, perdedor))
+    return pares

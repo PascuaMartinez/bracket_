@@ -98,3 +98,23 @@ def eliminar(jugador_id):
         return "", 204
     except jugador_service.JugadorNoEncontradoError as e:
         return jsonify({"error": str(e)}), 404
+
+
+@jugador_bp.route("/<int:jugador_id>/pronostico/<int:rival_id>", methods=["GET"])
+def pronostico(jugador_id, rival_id):
+    """Qué tan probable es que uno le gane al otro, según sus ratings."""
+    from services import rating_service, tabla_historica_service
+
+    tabla = tabla_historica_service.calcular_tabla_historica()
+    ratings = {f["jugador_id"]: f.get("rating") for f in tabla}
+
+    if jugador_id not in ratings or rival_id not in ratings:
+        return jsonify({"error": "Alguno de los dos no jugó ningún torneo"}), 404
+
+    return jsonify({
+        "jugador": {"id": jugador_id, "rating": ratings[jugador_id]},
+        "rival": {"id": rival_id, "rating": ratings[rival_id]},
+        "probabilidad": round(
+            rating_service.probabilidad(ratings[jugador_id], ratings[rival_id]), 3
+        ),
+    }), 200
