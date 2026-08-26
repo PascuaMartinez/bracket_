@@ -731,3 +731,109 @@ main { padding: 36px 0 64px; }
 .dialogo p { margin: 0 0 12px; }
 .dialogo .acciones { margin-top: 20px; }
 .dialogo form { margin: 0; }
+
+/* --- Pantalla de enfrentamiento ---
+   Es lo que se muestra al grupo antes de jugar, así que el peso visual va
+   en quiénes se enfrentan y no en los controles. */
+
+.contexto-partido {
+  font-family: var(--font-dato);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pine);
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+.enfrentamiento {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.lado { text-align: center; }
+
+.foto-vs {
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+}
+
+/* Sin foto, la inicial: mantiene la simetría en vez de dejar un lado
+   vacío y el otro con imagen. */
+.foto-vs-vacia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  font-family: var(--font-titulo);
+  font-size: 56px;
+  color: var(--pine);
+  background: var(--pine-soft);
+}
+
+.nombre-vs {
+  font-family: var(--font-titulo);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 14px 0 0;
+}
+
+.vidas {
+  font-family: var(--font-dato);
+  font-size: 17px;
+  color: var(--pine);
+  margin: 6px 0 0;
+}
+
+.centro-vs { text-align: center; }
+
+.vs {
+  font-family: var(--font-titulo);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--graphite);
+  margin: 0;
+}
+
+.historial-vs {
+  font-family: var(--font-dato);
+  font-size: 20px;
+  margin: 12px 0 0;
+}
+
+.historial-etiqueta {
+  font-family: var(--font-dato);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  margin: 0;
+}
+
+.acciones-vs {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 36px;
+}
+
+.acciones-vs form { margin: 0; }
+
+.dialogo-ancho { max-width: 520px; width: 92vw; }
+
+@media (max-width: 560px) {
+  .foto-vs { max-width: 130px; }
+  .foto-vs-vacia { font-size: 38px; }
+  .nombre-vs { font-size: 17px; }
+  .vs { font-size: 21px; }
+  .enfrentamiento { gap: 10px; }
+  .acciones-vs { flex-direction: column; }
+}

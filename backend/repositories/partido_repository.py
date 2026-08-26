@@ -238,3 +238,36 @@ def buscar(jugador_id=None, torneo_id=None, peleador_id=None,
     cursor.close()
     conn.close()
     return filas, total
+
+
+def historial_entre(jugador1_id, jugador2_id):
+    """
+    Cuántas veces se enfrentaron y cómo terminó cada uno.
+
+    Devuelve {jugador_id: victorias}. Sirve para mostrar el antecedente
+    antes de un partido: saber que vienen 3-1 le da peso al enfrentamiento
+    que está por jugarse.
+    """
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        """SELECT ganador_id, COUNT(*) AS veces
+           FROM partido
+           WHERE estado = 'finalizado' AND es_pase_libre = FALSE
+             AND ganador_id IS NOT NULL
+             AND ((jugador1_id = %s AND jugador2_id = %s)
+                  OR (jugador1_id = %s AND jugador2_id = %s))
+           GROUP BY ganador_id""",
+        (jugador1_id, jugador2_id, jugador2_id, jugador1_id),
+    )
+    filas = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    # Los dos jugadores siempre presentes, aunque uno nunca haya ganado:
+    # así quien lo muestre no tiene que contemplar la ausencia.
+    resultado = {jugador1_id: 0, jugador2_id: 0}
+    for fila in filas:
+        if fila["ganador_id"] in resultado:
+            resultado[fila["ganador_id"]] = fila["veces"]
+    return resultado

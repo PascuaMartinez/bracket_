@@ -68,6 +68,40 @@ def listar_partidos(torneo_id):
     return [p.to_dict() for p in partido_repository.obtener_por_torneo(torneo_id)]
 
 
+def describir_fase(torneo, partido):
+    """
+    En qué instancia del torneo se está jugando.
+
+    Es lo que le da sentido al enfrentamiento: no es lo mismo un partido
+    de grupos que una final, y la pantalla debería decirlo.
+    """
+    from services import bracket_service, grupos_service
+
+    if torneo.modo == "rey_de_la_cancha":
+        return "Rey de la cancha"
+
+    if torneo.modo == "todos_contra_todos":
+        return "Todos contra todos"
+
+    if partido.get("ronda"):
+        # El nombre de la ronda depende de cuántos partidos tenga: la
+        # misma ronda 2 es semifinal en un cuadro de 4 y cuartos en uno
+        # de 8.
+        cantidad = len(
+            partido_repository.obtener_por_ronda(torneo.id, partido["ronda"])
+        )
+        return bracket_service.nombre_de_ronda(cantidad)
+
+    if torneo.modo == "grupos_eliminacion":
+        return "Fase de grupos"
+
+    return ""
+
+
+def historial_entre(jugador1_id, jugador2_id):
+    return partido_repository.historial_entre(jugador1_id, jugador2_id)
+
+
 def obtener_partido_actual(torneo_id):
     """El próximo partido a jugar, o None si ya se jugaron todos.
 

@@ -1,65 +1,118 @@
 {% extends "base.html" %}
-{% block title %}Cargar resultado · Bracket{% endblock %}
+{% block title %}{{ nombre1 }} vs {{ nombre2 }} · Bracket{% endblock %}
 
 {% block content %}
-<p class="dato-tenue">{{ torneo.nombre }}</p>
-<h1 class="titulo-pagina">Cargar resultado</h1>
+{# La pantalla de enfrentamiento va limpia: es lo que se muestra al grupo
+   antes de jugar. El formulario para cargar el resultado queda detrás de
+   un botón para no ensuciarla. #}
+<p class="contexto-partido">
+  {{ torneo.nombre }}{% if partido.fase %} · {{ partido.fase }}{% endif %}
+</p>
 
-<form method="post" class="panel formulario">
-  <input type="hidden" name="partido_id" value="{{ partido.id }}">
-
-  <fieldset class="campo">
-    <legend>¿Quién ganó?</legend>
-    <label class="opcion">
-      <input type="radio" name="ganador_id" value="{{ partido.jugador1_id }}" required>
-      {{ nombre1 }}
-    </label>
-    <label class="opcion">
-      <input type="radio" name="ganador_id" value="{{ partido.jugador2_id }}">
-      {{ nombre2 }}
-    </label>
-  </fieldset>
-
-  {# Los personajes y las rondas son opcionales: en un torneo en vivo se
-     cargan si hay tiempo, y obligarlos haría que registrar un resultado
-     tarde más que jugar el partido. #}
-  <div class="campo">
-    <label for="peleador1_id">Personaje de {{ nombre1 }} <span class="tenue">(opcional)</span></label>
-    <select id="peleador1_id" name="peleador1_id">
-      <option value="">Sin registrar</option>
-      {% for p in peleadores %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
-    </select>
+<div class="enfrentamiento">
+  <div class="lado">
+    {% if jugador1.imagen_vertical %}
+    <img class="foto-vs" src="{{ jugador1.imagen_vertical | url_imagen }}" alt="">
+    {% else %}
+    <div class="foto-vs foto-vs-vacia">{{ nombre1[0] | upper }}</div>
+    {% endif %}
+    <p class="nombre-vs">{{ nombre1 }}</p>
+    {% if partido.vidas and partido.vidas.get(partido.jugador1_id | string) is not none %}
+    <p class="vidas">{{ partido.vidas[partido.jugador1_id | string] }} ♥</p>
+    {% endif %}
   </div>
 
-  <div class="campo">
-    <label for="peleador2_id">Personaje de {{ nombre2 }} <span class="tenue">(opcional)</span></label>
-    <select id="peleador2_id" name="peleador2_id">
-      <option value="">Sin registrar</option>
-      {% for p in peleadores %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
-    </select>
+  <div class="centro-vs">
+    <p class="vs">VS</p>
+    {# El antecedente entre los dos: saber que vienen 3-1 le da peso al
+       partido que está por jugarse. #}
+    {% if partido.historial %}
+    {% set g1 = partido.historial.get(partido.jugador1_id | string, 0) %}
+    {% set g2 = partido.historial.get(partido.jugador2_id | string, 0) %}
+    {% if g1 or g2 %}
+    <p class="historial-vs">{{ g1 }} &ndash; {{ g2 }}</p>
+    <p class="historial-etiqueta">historial</p>
+    {% endif %}
+    {% endif %}
   </div>
 
-  <div class="campo">
-    <label for="rondas_jugadas">Rondas <span class="tenue">(opcional)</span></label>
-    <select id="rondas_jugadas" name="rondas_jugadas">
-      <option value="">Sin registrar</option>
-      <option value="2">2-0</option>
-      <option value="3">2-1</option>
-    </select>
+  <div class="lado">
+    {% if jugador2.imagen_vertical %}
+    <img class="foto-vs" src="{{ jugador2.imagen_vertical | url_imagen }}" alt="">
+    {% else %}
+    <div class="foto-vs foto-vs-vacia">{{ nombre2[0] | upper }}</div>
+    {% endif %}
+    <p class="nombre-vs">{{ nombre2 }}</p>
+    {% if partido.vidas and partido.vidas.get(partido.jugador2_id | string) is not none %}
+    <p class="vidas">{{ partido.vidas[partido.jugador2_id | string] }} ♥</p>
+    {% endif %}
   </div>
+</div>
 
-  <button type="submit" class="boton">Guardar</button>
-</form>
+<div class="acciones-vs">
+  <button type="button" class="boton"
+          onclick="document.getElementById('dialogo-resultado').showModal()">
+    Cargar resultado
+  </button>
+  <form method="post"
+        action="{{ url_for('torneo.posponer', torneo_id=torneo.id, partido_id=partido.id) }}">
+    <button type="submit" class="boton-secundario">Posponer</button>
+  </form>
+</div>
 
-{# Posponer va en su propio formulario: si fuera un botón dentro del
-   anterior, el navegador podría mandarlo como envío del formulario de
-   resultado. #}
-<form method="post" class="formulario-suelto"
-      action="{{ url_for('torneo.posponer', torneo_id=torneo.id, partido_id=partido.id) }}">
-  <button type="submit" class="boton-secundario">Posponer este partido</button>
-  <p class="ayuda">Se saltea y se sigue con el próximo. Queda pendiente
-     para retomarlo cuando se pueda jugar.</p>
-</form>
+<dialog id="dialogo-resultado" class="dialogo dialogo-ancho">
+  <h2 class="titulo-seccion">Resultado</h2>
+
+  <form method="post">
+    <input type="hidden" name="partido_id" value="{{ partido.id }}">
+
+    <fieldset class="campo">
+      <legend>¿Quién ganó?</legend>
+      <label class="opcion">
+        <input type="radio" name="ganador_id" value="{{ partido.jugador1_id }}" required>
+        {{ nombre1 }}
+      </label>
+      <label class="opcion">
+        <input type="radio" name="ganador_id" value="{{ partido.jugador2_id }}">
+        {{ nombre2 }}
+      </label>
+    </fieldset>
+
+    {# Personajes y rondas son opcionales: en un torneo en vivo se cargan
+       si hay tiempo, y obligarlos haría que registrar el resultado tarde
+       más que jugar el partido. #}
+    <div class="campo">
+      <label for="peleador1_id">Personaje de {{ nombre1 }} <span class="tenue">(opcional)</span></label>
+      <select id="peleador1_id" name="peleador1_id">
+        <option value="">Sin registrar</option>
+        {% for p in peleadores %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="peleador2_id">Personaje de {{ nombre2 }} <span class="tenue">(opcional)</span></label>
+      <select id="peleador2_id" name="peleador2_id">
+        <option value="">Sin registrar</option>
+        {% for p in peleadores %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
+      </select>
+    </div>
+
+    <div class="campo">
+      <label for="rondas_jugadas">Rondas <span class="tenue">(opcional)</span></label>
+      <select id="rondas_jugadas" name="rondas_jugadas">
+        <option value="">Sin registrar</option>
+        <option value="2">2-0</option>
+        <option value="3">2-1</option>
+      </select>
+    </div>
+
+    <div class="acciones">
+      <button type="submit" class="boton">Guardar</button>
+      <button type="button" class="boton-secundario"
+              onclick="document.getElementById('dialogo-resultado').close()">Cancelar</button>
+    </div>
+  </form>
+</dialog>
 
 {% if pospuestos %}
 <h2 class="titulo-seccion">Partidos pospuestos</h2>

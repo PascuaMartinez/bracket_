@@ -104,9 +104,16 @@ def jugar(torneo_id):
     # que faltaban jugar.
     lista_pospuestos = torneos.pospuestos(torneo_id)
 
-    nombres = {j["id"]: j["nombre"] for j in api.get("/jugadores")}
+    # Se traen todos, incluidos los ocultos: un torneo viejo puede tener
+    # un partido pendiente de alguien que después se sacó del sistema, y
+    # la pantalla necesita poder nombrarlo.
+    jugadores = {j["id"]: j for j in api.get("/jugadores", incluir_ocultos="si")}
+    nombres = {jid: j["nombre"] for jid, j in jugadores.items()}
+
     return render_template(
         "torneos/jugar.html",
+        jugador1=jugadores.get(partido["jugador1_id"], {}),
+        jugador2=jugadores.get(partido["jugador2_id"], {}),
         torneo=torneos.obtener(torneo_id),
         partido=partido,
         nombre1=nombres.get(partido["jugador1_id"]),

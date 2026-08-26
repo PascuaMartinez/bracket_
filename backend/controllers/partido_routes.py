@@ -13,12 +13,34 @@ def listar(torneo_id):
 
 @partido_bp.route("/torneos/<int:torneo_id>/partido-actual", methods=["GET"])
 def actual(torneo_id):
+    """
+    El próximo partido con todo el contexto que necesita la pantalla:
+    en qué instancia se juega, cómo vienen entre ellos, y las vidas si el
+    formato las usa.
+
+    Va todo junto y no en llamadas separadas porque es una sola pantalla:
+    pedirlo en tres pedidos la haría más lenta sin ganar nada.
+    """
+    from repositories import torneo_repository
+    from services import vidas_service
+
     partido = partido_service.obtener_partido_actual(torneo_id)
     if partido is None:
-        # 204: la consulta salió bien, simplemente no hay partido pendiente.
-        # Un 404 diría que la dirección no existe, que no es el caso.
+        # 204: la consulta salió bien, simplemente no hay partido
+        # pendiente. Un 404 diría que la dirección no existe.
         return "", 204
-    return jsonify(partido), 200
+
+    torneo = torneo_repository.obtener_por_id(torneo_id)
+
+    return jsonify({
+        **partido,
+        "fase": partido_service.describir_fase(torneo, partido),
+        "historial": partido_service.historial_entre(
+            partido["jugador1_id"], partido["jugador2_id"]
+        ),
+        "vidas": vidas_service.vidas_de(torneo, [partido["jugador1_id"],
+                                                 partido["jugador2_id"]]),
+    }), 200
 
 
 @partido_bp.route("/partidos/<int:partido_id>/resultado", methods=["POST"])
