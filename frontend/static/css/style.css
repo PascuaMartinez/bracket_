@@ -837,3 +837,90 @@ main { padding: 36px 0 64px; }
   .enfrentamiento { gap: 10px; }
   .acciones-vs { flex-direction: column; }
 }
+
+/* --- Grilla de personajes ---
+   Con treinta personajes, reconocer una cara es más rápido que buscar un
+   nombre en una lista desplegable -- que es lo que se hace al jugar. */
+
+.grilla-personajes {
+  display: grid;
+  /* auto-fill acomoda tantas columnas como entren: en una pantalla ancha
+     son muchas por fila, en el celular caen a tres o cuatro solas. */
+  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+  gap: 8px;
+  /* Si hay muchos, la grilla se desliza sola en vez de estirar el diálogo
+     hasta que el botón de guardar quede fuera de la pantalla. */
+  max-height: 32vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+/* El radio real se esconde pero sigue existiendo: es lo que hace que el
+   teclado y los lectores de pantalla funcionen igual que con una lista
+   normal. */
+.personaje input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.personaje { cursor: pointer; }
+
+.personaje-tarjeta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 4px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--card);
+}
+
+.personaje:hover .personaje-tarjeta { border-color: var(--graphite); }
+
+/* El elegido se marca con el color de acento y un borde más grueso: el
+   color solo no alcanzaría para quien no lo distinga bien. */
+.personaje input:checked + .personaje-tarjeta {
+  border-color: var(--pine);
+  border-width: 2px;
+  padding: 6px 3px;
+  background: var(--pine-soft);
+}
+
+/* Se marca también al navegar con el teclado, o no habría forma de saber
+   dónde se está parado. */
+.personaje input:focus-visible + .personaje-tarjeta {
+  outline: 2px solid var(--pine);
+  outline-offset: 2px;
+}
+
+.personaje-icono {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.personaje-icono-vacio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  color: var(--graphite);
+  font-family: var(--font-titulo);
+  font-size: 17px;
+}
+
+.personaje-nombre {
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--graphite);
+  word-break: break-word;
+}
+
+.personaje input:checked + .personaje-tarjeta .personaje-nombre {
+  color: var(--pine);
+  font-weight: 600;
+}

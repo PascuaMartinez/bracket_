@@ -80,22 +80,41 @@
 
     {# Personajes y rondas son opcionales: en un torneo en vivo se cargan
        si hay tiempo, y obligarlos haría que registrar el resultado tarde
-       más que jugar el partido. #}
-    <div class="campo">
-      <label for="peleador1_id">Personaje de {{ nombre1 }} <span class="tenue">(opcional)</span></label>
-      <select id="peleador1_id" name="peleador1_id">
-        <option value="">Sin registrar</option>
-        {% for p in peleadores %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
-      </select>
-    </div>
+       más que jugar el partido.
 
-    <div class="campo">
-      <label for="peleador2_id">Personaje de {{ nombre2 }} <span class="tenue">(opcional)</span></label>
-      <select id="peleador2_id" name="peleador2_id">
-        <option value="">Sin registrar</option>
-        {% for p in peleadores %}<option value="{{ p.id }}">{{ p.nombre }}</option>{% endfor %}
-      </select>
-    </div>
+       Van como grilla de imágenes y no como lista desplegable: con treinta
+       personajes, buscar un nombre en una lista es más lento que reconocer
+       una cara, que es justamente lo que se hace al jugar. #}
+    {% for lado, nombre in [('1', nombre1), ('2', nombre2)] %}
+    <fieldset class="campo">
+      <legend>Personaje de {{ nombre }} <span class="tenue">(opcional)</span></legend>
+      <div class="grilla-personajes">
+        {# "Ninguno" primero y marcado por defecto: es lo que queda si no
+           se registra nada, así que tiene que ser el estado inicial
+           visible y no una ausencia de selección. #}
+        <label class="personaje">
+          <input type="radio" name="peleador{{ lado }}_id" value="" checked>
+          <span class="personaje-tarjeta">
+            <span class="personaje-icono personaje-icono-vacio">—</span>
+            <span class="personaje-nombre">Ninguno</span>
+          </span>
+        </label>
+        {% for p in peleadores %}
+        <label class="personaje">
+          <input type="radio" name="peleador{{ lado }}_id" value="{{ p.id }}">
+          <span class="personaje-tarjeta">
+            {% if p.imagen_icono %}
+            <img class="personaje-icono" src="{{ p.imagen_icono | url_imagen }}" alt="">
+            {% else %}
+            <span class="personaje-icono personaje-icono-vacio">{{ p.nombre[0] | upper }}</span>
+            {% endif %}
+            <span class="personaje-nombre">{{ p.nombre }}</span>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    {% endfor %}
 
     <div class="campo">
       <label for="rondas_jugadas">Rondas <span class="tenue">(opcional)</span></label>
