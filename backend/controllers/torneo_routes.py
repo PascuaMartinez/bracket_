@@ -59,6 +59,13 @@ def resolver_empate(torneo_id, grupo_id):
     return "", 204
 
 
+@torneo_bp.route("/<int:torneo_id>/desempeno", methods=["GET"])
+def desempeno(torneo_id):
+    """Cómo le fue en su grupo a cada uno de los que están sin resolver."""
+    ids = [int(j) for j in request.args.getlist("jugadores") if j.isdigit()]
+    return jsonify(grupos_consulta_service.desempeno_de(torneo_id, ids)), 200
+
+
 @torneo_bp.route("/<int:torneo_id>/repetir-desempate", methods=["POST"])
 def repetir_desempate(torneo_id):
     """Vuelve a jugar un desempate que no resolvió."""

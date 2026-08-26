@@ -444,7 +444,15 @@ def _cerrar_fase_de_grupos(torneo):
 
     grupos = grupo_repository.obtener_por_torneo(torneo.id)
     tamanos = [len(grupo_repository.obtener_jugadores(g["id"])) for g in grupos]
-    cupos = grupos_service.repartir_cupos(torneo.cupos_eliminacion, tamanos)
+
+    # Se reparte parejo y lo que sobra NO se le regala a ningún grupo: se
+    # lo disputan en el repechaje los que quedaron justo debajo del corte.
+    # Repartir el resto por tamaño de grupo decidiría un lugar por una
+    # circunstancia del sorteo en vez de por lo que se jugó.
+    por_grupo, lugares_de_repechaje = grupos_service.hay_repechaje(
+        torneo.cupos_eliminacion, tamanos
+    )
+    cupos = [min(por_grupo, tamano) for tamano in tamanos]
 
     clasificados = []
     hubo_empate = False
@@ -469,6 +477,10 @@ def _cerrar_fase_de_grupos(torneo):
     # Con algún empate sin resolver no se puede sembrar: falta saber
     # quiénes juegan el cuadro.
     if hubo_empate:
+        return
+
+    if lugares_de_repechaje:
+        _generar_repechaje(torneo, grupos, cupos, lugares_de_repechaje)
         return
 
     _sembrar_cuadro(torneo)
@@ -696,7 +708,7 @@ def resembrar(torneo_id, jugadores_en_orden):
     return len(partidos)
 
 
-def _generar_desempate(torneo_id, empatados):
+def _generar_desempate(torneo_id, empatados, es_repechaje=False):
     """
     Crea los partidos para resolver un empate en el corte.
 
@@ -708,7 +720,9 @@ def _generar_desempate(torneo_id, empatados):
 
     Los partidos quedan marcados como desempate: son un trámite para
     destrabar el torneo, no partidos del torneo, y por eso no suman a las
-    estadísticas de nadie.
+    estadísticas de nadie. Lo mismo vale para el repechaje, que usa esta
+    función porque es el mismo problema -- ordenar a varios que están
+    igualados -- resuelto de la misma forma.
     """
     from itertools import combinations
 
@@ -865,3 +879,42 @@ def repetir_desempate(torneo_id, jugadores_ids):
         partido_repository.eliminar(partido.id)
 
     return _generar_desempate(torneo_id, list(jugadores_ids))
+
+
+def _generar_repechaje(torneo, grupos, cupos, lugares):
+    """
+    Arma el repechaje entre los que quedaron justo debajo del corte.
+
+    Cuando los cupos no se reparten parejos quedan lugares sueltos. En vez
+    de dárselos a un grupo, los disputan los primeros excluidos de cada
+    uno: con tres grupos donde pasan dos, van los tres terceros.
+
+    Se juega todos contra todos entre ellos, igual que un desempate
+    múltiple, y por el mismo motivo: es la única forma de ordenarlos sin
+    que alguno tenga ventaja.
+
+    A diferencia del desempate, acá NO se puede resolver por
+    enfrentamiento directo: son de grupos distintos y nunca se cruzaron.
+    """
+    from services import tabla_service
+
+    candidatos = []
+    for grupo, cupos_del_grupo in zip(grupos, cupos):
+        tabla = tabla_service.calcular_tabla_de_grupo(torneo.id, grupo["id"])
+        # El primero que quedó afuera de ese grupo.
+        if len(tabla) > cupos_del_grupo:
+            candidatos.append(tabla[cupos_del_grupo]["jugador_id"])
+
+    if len(candidatos) <= lugares:
+        # No hay nada que disputar: entran todos.
+        for grupo in grupos:
+            ya = [j["jugador_id"] for j in grupo_repository.obtener_jugadores(grupo["id"])
+                  if j["clasificado"]]
+            del_grupo = [c for c in candidatos
+                         if c in {j["jugador_id"]
+                                  for j in grupo_repository.obtener_jugadores(grupo["id"])}]
+            grupo_repository.marcar_clasificados(grupo["id"], ya + del_grupo)
+        _sembrar_cuadro(torneo)
+        return
+
+    _generar_desempate(torneo.id, candidatos, es_repechaje=True)

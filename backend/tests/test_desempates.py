@@ -138,3 +138,50 @@ def test_los_partidos_contra_terceros_no_cuentan():
     # Ninguno le ganó al otro: siguen empatados pese a records distintos
     # contra el jugador 9.
     assert bloques == [[1, 2]]
+
+
+# --- Repechaje ---
+
+def test_los_cupos_sugeridos_dan_un_cuadro_limpio():
+    """Una potencia de dos evita los pases libres, que le dan ventaja a
+    algunos sin haberla ganado."""
+    from services.grupos_service import cupos_sugeridos
+
+    for cantidad in (10, 11, 12):
+        assert cupos_sugeridos(cantidad, 2) == 4
+    for cantidad in (13, 14, 15, 16):
+        assert cupos_sugeridos(cantidad, 3) == 8
+
+
+def test_los_cupos_sugeridos_dejan_gente_afuera():
+    """Si clasifican casi todos, la fase de grupos no decide nada."""
+    from services.grupos_service import cupos_sugeridos
+
+    for cantidad in (10, 13, 20, 32):
+        assert cupos_sugeridos(cantidad, 2) < cantidad
+
+
+def test_no_sugiere_menos_de_dos():
+    from services.grupos_service import cupos_sugeridos
+
+    assert cupos_sugeridos(3, 1) >= 2
+
+
+def test_detecta_cuando_sobran_lugares():
+    """15 jugadores en 3 grupos con 8 cupos: pasan 2 por grupo y quedan 2
+    en disputa."""
+    from services.grupos_service import hay_repechaje
+
+    por_grupo, sobrantes = hay_repechaje(8, [5, 5, 5])
+
+    assert por_grupo == 2
+    assert sobrantes == 2
+
+
+def test_sin_sobrantes_no_hay_repechaje():
+    from services.grupos_service import hay_repechaje
+
+    por_grupo, sobrantes = hay_repechaje(8, [4, 4, 4, 4])
+
+    assert por_grupo == 2
+    assert sobrantes == 0

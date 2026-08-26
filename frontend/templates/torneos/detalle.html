@@ -92,6 +92,34 @@
 {% endif %}
 {% endfor %}
 
+{% if desempeno %}
+<h2 class="titulo-seccion">Cómo llegaron los que están en disputa</h2>
+<p class="ayuda">
+  Vienen de grupos distintos y no se enfrentaron entre sí, así que si hay
+  que decidir a mano conviene mirar cómo le fue a cada uno.
+</p>
+<div class="tabla-contenedor">
+<table class="tabla">
+  <thead>
+    <tr><th>Jugador</th><th>Grupo</th><th>Puesto</th><th>PJ</th><th>PG</th><th>PP</th><th>Win rate</th></tr>
+  </thead>
+  <tbody>
+    {% for f in desempeno %}
+    <tr>
+      <td>{{ f.nombre }}</td>
+      <td>{{ f.grupo }}</td>
+      <td class="dato">{{ f.puesto }}</td>
+      <td class="dato">{{ f.pj }}</td>
+      <td class="dato">{{ f.pg }}</td>
+      <td class="dato">{{ f.pp }}</td>
+      <td class="dato">{{ (f.win_rate * 100) | round | int }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+
 <h2 class="titulo-seccion">Posiciones finales</h2>
 {% else %}
 <h2 class="titulo-seccion">Posiciones</h2>

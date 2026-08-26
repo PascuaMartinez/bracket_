@@ -65,6 +65,16 @@ def detalle(torneo_id):
     if datos["torneo"]["modo"] == "grupos_eliminacion":
         datos["grupos"] = torneos.grupos(torneo_id)
 
+        # Si quedó algo sin resolver, se trae cómo le fue a cada uno en su
+        # grupo: son de grupos distintos y pueden haber llegado ahí de
+        # formas muy diferentes, así que decidir a ciegas sería peor.
+        sin_resolver = [f["jugador_id"] for g in datos["grupos"]
+                        for f in g["tabla"] if f.get("sin_resolver")]
+        if sin_resolver:
+            datos["desempeno"] = api.get(
+                f"/torneos/{torneo_id}/desempeno", jugadores=sin_resolver
+            )
+
     # Los torneos vienen del más nuevo al más viejo, así que "siguiente"
     # lleva a uno más viejo. Se invierten para que la flecha derecha
     # avance en el tiempo, que es lo que uno espera al recorrerlos.

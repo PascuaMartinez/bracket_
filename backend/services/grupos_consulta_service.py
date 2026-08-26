@@ -31,3 +31,36 @@ def obtener_grupos(torneo_id):
 
         grupos.append({"id": grupo["id"], "nombre": grupo["nombre"], "tabla": tabla})
     return grupos
+
+
+def desempeno_de(torneo_id, jugadores_ids):
+    """
+    Cómo le fue en su grupo a cada uno de los que están en el repechaje.
+
+    En un desempate esto no haría falta: los empatados tienen exactamente
+    el mismo registro, por eso empataron. Pero en un repechaje los
+    candidatos vienen de grupos distintos y pueden haber llegado ahí de
+    formas muy diferentes -- uno con dos victorias y otro con una -- así
+    que si hay que decidir a mano, esa información importa.
+    """
+    from services import tabla_service
+
+    resultado = []
+    for grupo in grupo_repository.obtener_por_torneo(torneo_id):
+        tabla = tabla_service.calcular_tabla_de_grupo(torneo_id, grupo["id"])
+        for fila in tabla:
+            if fila["jugador_id"] in jugadores_ids:
+                resultado.append({
+                    "jugador_id": fila["jugador_id"],
+                    "nombre": fila["nombre"],
+                    "grupo": grupo["nombre"],
+                    "puesto": fila["puesto"],
+                    "pj": fila["pj"],
+                    "pg": fila["pg"],
+                    "pp": fila["pp"],
+                    "win_rate": fila["win_rate"],
+                })
+
+    # Del que mejor le fue al que peor: si hay que elegir a mano, el orden
+    # ya sugiere por dónde empezar a mirar.
+    return sorted(resultado, key=lambda f: (-f["pg"], -f["win_rate"]))

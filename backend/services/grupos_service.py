@@ -163,3 +163,59 @@ def resolver_por_enfrentamiento_directo(empatados, partidos_del_grupo):
         por_victorias.setdefault(victorias[jugador], []).append(jugador)
 
     return [por_victorias[cantidad] for cantidad in sorted(por_victorias, reverse=True)]
+
+
+def cupos_sugeridos(cantidad_jugadores, cantidad_grupos):
+    """
+    Cuántos clasificados dejan un cuadro limpio.
+
+    Un cuadro de eliminación funciona mejor con una potencia de dos: 4 son
+    semifinales, 8 cuartos. Con otra cantidad hay pases libres, que le dan
+    ventaja a algunos sin que la hayan ganado en la cancha.
+
+    Se busca la potencia de dos más grande que deje afuera al menos a un
+    tercio de los participantes. Ese margen es el que hace que la fase de
+    grupos signifique algo: si clasifican casi todos, jugarla no decide
+    nada.
+
+    Con 10 a 12 jugadores da 4 -- semifinales -- y con 13 o más da 8
+    -- cuartos --, que es como se arman estos torneos en la práctica.
+    """
+    if cantidad_jugadores < 4 or cantidad_grupos < 1:
+        return 2
+
+    # Estrictamente menor a dos tercios: con 12 jugadores, 8 clasificados
+    # serían exactamente dos tercios y dejarían afuera a solo cuatro. El
+    # corte va justo ahí porque es donde la fase de grupos deja de
+    # decidir lo suficiente.
+    limite = cantidad_jugadores * 2 / 3
+
+    potencia = 2
+    while potencia * 2 < limite:
+        potencia *= 2
+
+    # Nunca más clasificados que participantes, ni menos de dos: con uno
+    # solo no hay cuadro que jugar.
+    return max(2, min(potencia, cantidad_jugadores))
+
+
+def hay_repechaje(cupos_totales, tamanos_de_grupo):
+    """
+    Si los cupos no se reparten parejos y quedan lugares en disputa.
+
+    Con 15 jugadores en 3 grupos y 8 cupos: pasan 2 por grupo (6) y
+    quedan 2 lugares. Esos no se le regalan a ningún grupo -- se los
+    disputan los que quedaron justo debajo del corte en cada uno.
+
+    Es distinto del reparto por resto mayor, que le da el cupo extra al
+    grupo más grande. Ahí el lugar se decide por el tamaño del grupo; acá
+    se decide jugando, que es más justo cuando los grupos son parejos.
+    """
+    cantidad_grupos = len(tamanos_de_grupo)
+    if cantidad_grupos == 0:
+        return 0, 0
+
+    por_grupo = cupos_totales // cantidad_grupos
+    sobrantes = cupos_totales % cantidad_grupos
+
+    return por_grupo, sobrantes
