@@ -59,7 +59,8 @@ def _apariciones(peleador_id):
     apariciones = []
     for torneo in torneos:
         for p in partido_repository.obtener_por_torneo(torneo.id):
-            if p.estado != "finalizado" or p.ganador_id is None or p.es_pase_libre:
+            if (p.estado != "finalizado" or p.ganador_id is None
+                    or p.es_pase_libre or p.es_desempate):
                 continue
 
             for lado, contrario in ((1, 2), (2, 1)):

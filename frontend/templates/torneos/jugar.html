@@ -9,6 +9,16 @@
   {{ torneo.nombre }}{% if partido.fase %} · {{ partido.fase }}{% endif %}
 </p>
 
+{# Un desempate se avisa: quien lo juega tiene que saber que está en
+   disputa un lugar en la eliminación, y que ese partido no le suma a sus
+   estadísticas. #}
+{% if partido.es_desempate %}
+<p class="aviso-desempate">
+  Desempate por un lugar en la eliminación.
+  <span class="tenue">No cuenta para las estadísticas.</span>
+</p>
+{% endif %}
+
 <div class="enfrentamiento">
   <div class="lado">
     {% if jugador1.imagen_vertical %}

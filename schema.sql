@@ -115,6 +115,12 @@ CREATE TABLE partido (
     -- la ronda. Por eso jugador2_id admite NULL.
     es_pase_libre BOOLEAN NOT NULL DEFAULT FALSE,
 
+    -- Un partido de desempate: se juega para destrabar un empate en el
+    -- corte de clasificación, no es parte del torneo en sí. Por eso no
+    -- suma a las estadísticas -- existió solo porque hubo un empate, y
+    -- contarlo le daría a esos jugadores partidos que el torneo no tenía.
+    es_desempate BOOLEAN NOT NULL DEFAULT FALSE,
+
     estado ENUM('pendiente', 'en_curso', 'finalizado', 'pospuesto') DEFAULT 'pendiente',
     fecha_jugado DATETIME NULL,
 

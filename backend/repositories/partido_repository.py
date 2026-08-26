@@ -14,8 +14,9 @@ def crear_muchos(partidos, con_ronda=False):
     columnas = "torneo_id, jugador1_id, jugador2_id, orden, jornada"
     valores = "%(torneo_id)s, %(jugador1_id)s, %(jugador2_id)s, %(orden)s, %(jornada)s"
     if con_ronda:
-        columnas += ", ronda, es_pase_libre, ganador_id, estado"
-        valores += ", %(ronda)s, %(es_pase_libre)s, %(ganador_id)s, %(estado)s"
+        columnas += ", ronda, es_pase_libre, es_desempate, ganador_id, estado"
+        valores += (", %(ronda)s, %(es_pase_libre)s, %(es_desempate)s,"
+                    " %(ganador_id)s, %(estado)s")
     conn = get_connection()
     cursor = conn.cursor()
     cursor.executemany(
@@ -191,7 +192,8 @@ def buscar(jugador_id=None, torneo_id=None, peleador_id=None,
     partidos, y traerlos todos para mostrar los primeros 50 desperdicia
     memoria y tiempo en los dos lados.
     """
-    condiciones = ["p.estado = 'finalizado'", "p.es_pase_libre = FALSE"]
+    condiciones = ["p.estado = 'finalizado'", "p.es_pase_libre = FALSE",
+                   "p.es_desempate = FALSE"]
     parametros = []
 
     if jugador_id:
@@ -254,7 +256,7 @@ def historial_entre(jugador1_id, jugador2_id):
         """SELECT ganador_id, COUNT(*) AS veces
            FROM partido
            WHERE estado = 'finalizado' AND es_pase_libre = FALSE
-             AND ganador_id IS NOT NULL
+             AND es_desempate = FALSE AND ganador_id IS NOT NULL
              AND ((jugador1_id = %s AND jugador2_id = %s)
                   OR (jugador1_id = %s AND jugador2_id = %s))
            GROUP BY ganador_id""",

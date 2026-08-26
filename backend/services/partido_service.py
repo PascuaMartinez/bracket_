@@ -266,6 +266,7 @@ def _avanzar_bracket(torneo_id, ronda):
             "jornada": None,
             "ronda": ronda + 1,
             "es_pase_libre": False,
+            "es_desempate": False,
             "ganador_id": None,
             "estado": "pendiente",
         })
@@ -291,6 +292,7 @@ def _generar_rey_de_la_cancha(torneo_id, jugadores_ids, vidas_iniciales):
         "jornada": None,
         "ronda": None,
         "es_pase_libre": False,
+            "es_desempate": False,
         "ganador_id": None,
         "estado": "pendiente",
     }], con_ronda=True)
@@ -347,6 +349,7 @@ def _avanzar_cola(partido, ganador_id):
         "jornada": None,
         "ronda": None,
         "es_pase_libre": False,
+            "es_desempate": False,
         "ganador_id": None,
         "estado": "pendiente",
     }], con_ronda=True)
@@ -394,6 +397,7 @@ def _generar_grupos(torneo_id, jugadores_ids, cantidad_grupos):
                     # cuadro usa ronda 1, 2, 3...
                     "ronda": None,
                     "es_pase_libre": False,
+            "es_desempate": False,
                     "ganador_id": None,
                     "estado": "pendiente",
                 })
@@ -410,6 +414,10 @@ def _avanzar_grupos_eliminacion(torneo, partido):
     terminaron todos, calcula clasificados y arranca el cuadro. Si fue del
     cuadro, avanza la ronda.
     """
+    if partido.es_desempate:
+        _resolver_desempates_terminados(torneo)
+        return
+
     if partido.ronda is not None:
         _avanzar_bracket(torneo.id, partido.ronda)
         return
@@ -446,15 +454,14 @@ def _cerrar_fase_de_grupos(torneo):
 
         empate = grupos_service.detectar_empate_en_el_corte(tabla, cupos_del_grupo)
         if empate is not None:
-            # No se resuelve solo. Desempatar por win rate o por orden
-            # alfabético sería decidir con un criterio que el torneo nunca
-            # jugó: los empatados hicieron exactamente lo mismo. Se deja
-            # sin marcar y el organizador decide -- jugando un desempate o
-            # a dedo.
+            # Los empatados hicieron exactamente lo mismo, así que se
+            # resuelve donde corresponde: jugando. Se generan los partidos
+            # de desempate y el torneo espera esos resultados.
             hubo_empate = True
             decididos = [f["jugador_id"] for f in tabla
                          if f["puntos"] > empate["empatados"][0]["puntos"]]
             grupo_repository.marcar_clasificados(grupo["id"], decididos)
+            _generar_desempate(torneo.id, [f["jugador_id"] for f in empate["empatados"]])
             continue
 
         pasan = [f["jugador_id"] for f in tabla[:cupos_del_grupo]]
@@ -522,6 +529,7 @@ def _sembrar_cuadro(torneo):
             "torneo_id": torneo.id, "jugador1_id": jugador1, "jugador2_id": jugador2,
             "orden": orden, "jornada": None, "ronda": 1,
             "es_pase_libre": es_pase_libre,
+            "es_desempate": False,
             "ganador_id": jugador1 if es_pase_libre else None,
             "estado": "finalizado" if es_pase_libre else "pendiente",
         })
@@ -682,8 +690,111 @@ def resembrar(torneo_id, jugadores_en_orden):
             "torneo_id": torneo_id, "jugador1_id": jugador1, "jugador2_id": jugador2,
             "orden": orden, "jornada": None, "ronda": 1,
             "es_pase_libre": es_pase_libre,
+            "es_desempate": False,
             "ganador_id": jugador1 if es_pase_libre else None,
             "estado": "finalizado" if es_pase_libre else "pendiente",
         })
     partido_repository.crear_muchos(partidos, con_ronda=True)
     return len(partidos)
+
+
+def _generar_desempate(torneo_id, empatados):
+    """
+    Crea los partidos para resolver un empate en el corte.
+
+    Con dos empatados alcanza un partido. Con tres o más se juegan todos
+    contra todos entre ellos: es la única forma de ordenarlos sin que
+    alguno tenga ventaja. Las alternativas fallan -- hacer jugar a dos y
+    que el tercero pase gratis lo premia por no jugar, y una eliminación
+    entre tres le da al que entra después una ventaja de descanso.
+
+    Los partidos quedan marcados como desempate: son un trámite para
+    destrabar el torneo, no partidos del torneo, y por eso no suman a las
+    estadísticas de nadie.
+    """
+    from itertools import combinations
+
+    orden = partido_repository.obtener_max_orden(torneo_id)
+    partidos = []
+    for jugador1, jugador2 in combinations(empatados, 2):
+        orden += 1
+        partidos.append({
+            "torneo_id": torneo_id, "jugador1_id": jugador1, "jugador2_id": jugador2,
+            "orden": orden, "jornada": None, "ronda": None,
+            "es_pase_libre": False, "es_desempate": True,
+            "ganador_id": None, "estado": "pendiente",
+        })
+    partido_repository.crear_muchos(partidos, con_ronda=True)
+    return len(partidos)
+
+
+def _resolver_desempates_terminados(torneo):
+    """
+    Cuando terminan los desempates de un grupo, decide quién clasifica.
+
+    Se ordena por lo que hicieron EN el desempate: quién le ganó a quién.
+    Si el desempate tampoco alcanza para separarlos -- todos ganaron uno y
+    perdieron uno, que en un triangular es posible -- queda sin resolver y
+    lo decide el organizador. No hay forma de destrabarlo jugando otra vez
+    lo mismo.
+    """
+    from services import tabla_service
+
+    desempates = [p for p in partido_repository.obtener_por_torneo(torneo.id)
+                  if p.es_desempate]
+    if not desempates or any(p.estado != "finalizado" for p in desempates):
+        return   # todavía falta jugar alguno
+
+    grupos = grupo_repository.obtener_por_torneo(torneo.id)
+    tamanos = [len(grupo_repository.obtener_jugadores(g["id"])) for g in grupos]
+    cupos = grupos_service.repartir_cupos(torneo.cupos_eliminacion, tamanos)
+
+    for grupo, cupos_del_grupo in zip(grupos, cupos):
+        jugadores_del_grupo = {j["jugador_id"]
+                               for j in grupo_repository.obtener_jugadores(grupo["id"])
+                               if j["clasificado"] is None}
+        if not jugadores_del_grupo:
+            continue
+
+        # Cuántos lugares quedan por repartir en este grupo.
+        ya_pasaron = sum(1 for j in grupo_repository.obtener_jugadores(grupo["id"])
+                         if j["clasificado"])
+        lugares = cupos_del_grupo - ya_pasaron
+
+        orden = _ordenar_por_desempate(desempates, jugadores_del_grupo)
+        if orden is None:
+            continue   # el desempate no los separó: decide el organizador
+
+        ya_clasificados = [j["jugador_id"]
+                           for j in grupo_repository.obtener_jugadores(grupo["id"])
+                           if j["clasificado"]]
+        grupo_repository.marcar_clasificados(
+            grupo["id"], ya_clasificados + orden[:lugares]
+        )
+
+    if not grupo_repository.hay_indecisos(torneo.id):
+        _sembrar_cuadro(torneo)
+
+
+def _ordenar_por_desempate(desempates, jugadores):
+    """
+    Ordena a los empatados según lo que hicieron en el desempate.
+
+    Devuelve None si el desempate no los separó: con tres jugadores puede
+    pasar que cada uno gane uno y pierda uno, y ahí volver a jugar lo
+    mismo no cambiaría nada.
+    """
+    victorias = {j: 0 for j in jugadores}
+    for partido in desempates:
+        if partido.ganador_id in victorias and partido.jugador1_id in victorias \
+                and partido.jugador2_id in victorias:
+            victorias[partido.ganador_id] += 1
+
+    ordenados = sorted(victorias, key=lambda j: -victorias[j])
+
+    # Si dos comparten cantidad de victorias, el desempate no alcanzó.
+    cantidades = sorted(victorias.values(), reverse=True)
+    if len(set(cantidades)) != len(cantidades):
+        return None
+
+    return ordenados

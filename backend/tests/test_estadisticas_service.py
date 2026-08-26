@@ -6,12 +6,12 @@ from unittest.mock import patch
 from services import estadisticas_service
 
 
-def partido(torneo_id, jugador1, jugador2, ganador, orden=1, es_pase_libre=False,
+def partido(torneo_id, jugador1, jugador2, ganador, orden=1, es_pase_libre=False, es_desempate=False,
             rondas=None):
     return SimpleNamespace(
         torneo_id=torneo_id, jugador1_id=jugador1, jugador2_id=jugador2,
         ganador_id=ganador, orden=orden, estado="finalizado",
-        es_pase_libre=es_pase_libre, rondas_jugadas=rondas,
+        es_pase_libre=es_pase_libre, es_desempate=es_desempate, rondas_jugadas=rondas,
     )
 
 

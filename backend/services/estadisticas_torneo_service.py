@@ -25,7 +25,8 @@ def obtener_estadisticas(torneo_id):
         p for p in partido_repository.obtener_por_torneo(torneo_id)
         # Los pases libres no se jugaron: contarlos como partidos
         # inflaría todos los números del torneo.
-        if p.estado == "finalizado" and p.ganador_id is not None and not p.es_pase_libre
+        if p.estado == "finalizado" and p.ganador_id is not None
+        and not p.es_pase_libre and not p.es_desempate
     ]
     nombres = {j.id: j.nombre for j in jugador_repository.obtener_todos()}
     participantes = torneo_repository.obtener_participantes(torneo_id)

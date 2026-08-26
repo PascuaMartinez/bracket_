@@ -18,10 +18,10 @@ def participante(jugador_id, nombre):
     return {"jugador_id": jugador_id, "nombre": nombre, "torneo_jugador_id": jugador_id}
 
 
-def partido(jugador1, jugador2, ganador, ronda=None, orden=1, es_pase_libre=False):
+def partido(jugador1, jugador2, ganador, ronda=None, orden=1, es_pase_libre=False, es_desempate=False):
     return SimpleNamespace(
         jugador1_id=jugador1, jugador2_id=jugador2, ganador_id=ganador,
-        ronda=ronda, orden=orden, estado="finalizado", es_pase_libre=es_pase_libre,
+        ronda=ronda, orden=orden, estado="finalizado", es_pase_libre=es_pase_libre, es_desempate=es_desempate,
     )
 
 

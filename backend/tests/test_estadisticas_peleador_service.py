@@ -54,12 +54,12 @@ def test_sin_rivales_no_falla():
 # --- Estadísticas de personaje ---
 
 def partido(jugador1, jugador2, peleador1, peleador2, ganador,
-            rondas=None, orden=1, es_pase_libre=False):
+            rondas=None, orden=1, es_pase_libre=False, es_desempate=False):
     return SimpleNamespace(
         jugador1_id=jugador1, jugador2_id=jugador2,
         jugador1_peleador_id=peleador1, jugador2_peleador_id=peleador2,
         ganador_id=ganador, rondas_jugadas=rondas, orden=orden,
-        estado="finalizado", es_pase_libre=es_pase_libre,
+        estado="finalizado", es_pase_libre=es_pase_libre, es_desempate=es_desempate,
     )
 
 

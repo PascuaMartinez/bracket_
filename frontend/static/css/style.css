@@ -960,3 +960,15 @@ main { padding: 36px 0 64px; }
 
 .botones-mover { display: flex; gap: 10px; }
 .botones-mover button { font-size: 16px; text-decoration: none; }
+
+/* Aviso de desempate: en ámbar, el color de lo que está en curso o
+   pendiente de resolverse. */
+.aviso-desempate {
+  text-align: center;
+  font-size: 14px;
+  color: var(--amber);
+  background: rgba(140, 106, 63, 0.08);
+  border-radius: 4px;
+  padding: 8px 14px;
+  margin: 0 0 20px;
+}

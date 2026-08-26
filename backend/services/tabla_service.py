@@ -245,7 +245,11 @@ def calcular_tabla_de_grupo(torneo_id, grupo_id):
     for partido in partido_repository.obtener_por_torneo(torneo_id):
         # Solo los de la fase de grupos (ronda None) y entre jugadores de
         # ESTE grupo: los del cuadro no cuentan para la tabla del grupo.
-        if partido.ronda is not None or partido.estado != "finalizado":
+        # Los desempates no cuentan para la tabla del grupo: se juegan
+        # DESPUÉS de que la tabla quedó definida, justamente para
+        # destrabarla, y sumarlos la cambiaría después de haberla usado.
+        if (partido.ronda is not None or partido.estado != "finalizado"
+                or partido.es_desempate):
             continue
         if partido.jugador1_id not in ids_del_grupo:
             continue

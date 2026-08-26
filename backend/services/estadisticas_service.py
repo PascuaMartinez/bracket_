@@ -37,6 +37,10 @@ def obtener_estadisticas(jugador_id):
                 # No se jugó: contarlo como victoria inflaría el récord de
                 # quien tuvo la suerte de que el cuadro no cerrara justo.
                 continue
+            if p.es_desempate:
+                # Un desempate existió solo porque hubo un empate: no es
+                # un partido del torneo y no debería sumar al récord.
+                continue
             if jugador_id in (p.jugador1_id, p.jugador2_id):
                 partidos.append(p)
 
