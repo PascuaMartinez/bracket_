@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Corregir resultado · Bracket{% endblock %}
+
+{% block content %}
+<p class="dato-tenue">{{ torneo.nombre }}</p>
+<h1 class="titulo-pagina">Corregir un resultado</h1>
+<p class="subtitulo">
+  Para cuando se cargó mal: el ganador equivocado, o el personaje que no era.
+</p>
+
+{% if error %}<div class="aviso-error">{{ error }}</div>{% endif %}
+
+{% if partidos %}
+{# Solo aparecen los que se pueden corregir sin romper el torneo. En
+   eliminación y rey de la cancha, un resultado que ya definió los
+   partidos siguientes no está en esta lista: cambiarlo dejaría el cuadro
+   apuntando a alguien que ya no ganó. #}
+<div class="tabla-contenedor">
+<table class="tabla">
+  <thead>
+    <tr><th>Partido</th><th>Ganó</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for p in partidos %}
+    <tr>
+      <td>
+        {{ jugadores.get(p.jugador1_id, {}).get('nombre', '?') }}
+        <span class="tenue">vs</span>
+        {{ jugadores.get(p.jugador2_id, {}).get('nombre', '?') }}
+      </td>
+      <td class="ganador">{{ jugadores.get(p.ganador_id, {}).get('nombre', '?') }}</td>
+      <td class="celda-acciones">
+        <button type="button" class="enlace-boton"
+                onclick="document.getElementById('corregir-{{ p.id }}').showModal()">
+          Corregir
+        </button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% for p in partidos %}
+<dialog id="corregir-{{ p.id }}" class="dialogo dialogo-ancho">
+  <h2 class="titulo-seccion">
+    {{ jugadores.get(p.jugador1_id, {}).get('nombre', '?') }}
+    vs
+    {{ jugadores.get(p.jugador2_id, {}).get('nombre', '?') }}
+  </h2>
+
+  <form method="post">
+    <input type="hidden" name="partido_id" value="{{ p.id }}">
+
+    <fieldset class="campo">
+      <legend>¿Quién ganó?</legend>
+      {% for lado in ['1', '2'] %}
+      {% set jid = p['jugador' ~ lado ~ '_id'] %}
+      <label class="opcion">
+        {# Viene marcado lo que está cargado: se corrige lo que está mal,
+           no se carga todo de nuevo. #}
+        <input type="radio" name="ganador_id" value="{{ jid }}"
+               {{ 'checked' if p.ganador_id == jid }} required>
+        {{ jugadores.get(jid, {}).get('nombre', '?') }}
+      </label>
+      {% endfor %}
+    </fieldset>
+
+    {% for lado in ['1', '2'] %}
+    {% set jid = p['jugador' ~ lado ~ '_id'] %}
+    {% set actual = p['jugador' ~ lado ~ '_peleador_id'] %}
+    <fieldset class="campo">
+      <legend>Personaje de {{ jugadores.get(jid, {}).get('nombre', '?') }}</legend>
+      <div class="grilla-personajes">
+        <label class="personaje">
+          <input type="radio" name="peleador{{ lado }}_id" value=""
+                 {{ 'checked' if not actual }}>
+          <span class="personaje-tarjeta">
+            <span class="personaje-icono personaje-icono-vacio">—</span>
+            <span class="personaje-nombre">Ninguno</span>
+          </span>
+        </label>
+        {% for pe in peleadores %}
+        <label class="personaje">
+          <input type="radio" name="peleador{{ lado }}_id" value="{{ pe.id }}"
+                 {{ 'checked' if actual == pe.id }}>
+          <span class="personaje-tarjeta">
+            {% if pe.imagen_icono %}
+            <img class="personaje-icono" src="{{ pe.imagen_icono | url_imagen }}" alt="">
+            {% else %}
+            <span class="personaje-icono personaje-icono-vacio">{{ pe.nombre[0] | upper }}</span>
+            {% endif %}
+            <span class="personaje-nombre">{{ pe.nombre }}</span>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    {% endfor %}
+
+    <div class="campo">
+      <label for="rondas-{{ p.id }}">Rondas</label>
+      <select id="rondas-{{ p.id }}" name="rondas_jugadas">
+        <option value="" {{ 'selected' if not p.rondas_jugadas }}>Sin registrar</option>
+        <option value="2" {{ 'selected' if p.rondas_jugadas == 2 }}>2-0</option>
+        <option value="3" {{ 'selected' if p.rondas_jugadas == 3 }}>2-1</option>
+      </select>
+    </div>
+
+    <div class="acciones">
+      <button type="submit" class="boton">Guardar corrección</button>
+      <button type="button" class="boton-secundario"
+              onclick="document.getElementById('corregir-{{ p.id }}').close()">Cancelar</button>
+    </div>
+  </form>
+</dialog>
+{% endfor %}
+{% else %}
+<div class="vacio">
+  <p>No hay resultados que se puedan corregir.</p>
+  <p class="tenue">
+    En eliminación y rey de la cancha, un resultado que ya definió los
+    partidos siguientes no se puede cambiar: dejaría el torneo apuntando a
+    alguien que ya no ganó.
+  </p>
+</div>
+{% endif %}
+{% endblock %}

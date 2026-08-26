@@ -86,3 +86,27 @@ def retomar(partido_id):
         return jsonify({"error": str(e)}), 400
     except partido_service.PartidoNoEncontradoError as e:
         return jsonify({"error": str(e)}), 404
+
+
+@partido_bp.route("/torneos/<int:torneo_id>/corregibles", methods=["GET"])
+def corregibles(torneo_id):
+    return jsonify(partido_service.listar_corregibles(torneo_id)), 200
+
+
+@partido_bp.route("/partidos/<int:partido_id>/resultado", methods=["PUT"])
+def corregir_resultado(partido_id):
+    """Cambia un resultado ya cargado. PUT y no POST: reemplaza algo que
+    ya existe, no crea nada nuevo."""
+    datos = request.get_json(silent=True) or {}
+    try:
+        return jsonify(partido_service.corregir_resultado(
+            partido_id,
+            datos.get("ganador_id"),
+            datos.get("peleador1_id"),
+            datos.get("peleador2_id"),
+            datos.get("rondas_jugadas"),
+        )), 200
+    except partido_service.ResultadoInvalidoError as e:
+        return jsonify({"error": str(e)}), 400
+    except partido_service.PartidoNoEncontradoError as e:
+        return jsonify({"error": str(e)}), 404

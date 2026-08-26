@@ -59,6 +59,15 @@ def resolver_empate(torneo_id, grupo_id, jugador_id, clasifica, observacion=None
     })
 
 
+def corregibles(torneo_id):
+    """Los partidos ya jugados que todavía se pueden corregir."""
+    return api.get(f"/torneos/{torneo_id}/corregibles")
+
+
+def corregir_resultado(partido_id, datos):
+    return api.put(f"/partidos/{partido_id}/resultado", datos)
+
+
 def crear(datos):
     return api.post("/torneos", datos)
 

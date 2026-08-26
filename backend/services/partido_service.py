@@ -526,3 +526,92 @@ def _sembrar_cuadro(torneo):
             "estado": "finalizado" if es_pase_libre else "pendiente",
         })
     partido_repository.crear_muchos(partidos, con_ronda=True)
+
+
+def puede_corregirse(torneo, partido):
+    """
+    Si un resultado ya cargado se puede corregir sin romper el torneo.
+
+    En todos contra todos siempre se puede: los partidos están todos
+    definidos de antemano y cambiar quién ganó solo recalcula la tabla.
+
+    En eliminación y rey de la cancha no, si ya se generó lo que sigue.
+    El ganador de un partido pasa a la ronda siguiente o se queda en
+    cancha: cambiarlo dejaría partidos posteriores jugados por alguien que
+    ya no ganó, y no hay forma automática de deshacer eso -- habría que
+    borrar todo lo que vino después, incluidos resultados que sí eran
+    correctos.
+
+    Se puede corregir mientras nada dependa todavía de ese resultado.
+    """
+    if partido.estado != "finalizado":
+        return True, None
+
+    if torneo.modo in ("todos_contra_todos", "grupos_eliminacion") and partido.ronda is None:
+        return True, None
+
+    # ¿Se generó algo después de este partido?
+    posteriores = [
+        p for p in partido_repository.obtener_por_torneo(torneo.id)
+        if (p.orden or 0) > (partido.orden or 0)
+    ]
+    if posteriores:
+        return False, (
+            "Este resultado ya definió los partidos que siguen. "
+            "Corregirlo dejaría el torneo inconsistente."
+        )
+
+    return True, None
+
+
+def corregir_resultado(partido_id, ganador_id, peleador1_id=None,
+                       peleador2_id=None, rondas_jugadas=None):
+    """
+    Cambia un resultado ya cargado.
+
+    Sirve para el error de carga: se tocó el nombre equivocado, o se
+    registró mal el personaje. Sin esto, un error quedaría para siempre en
+    las estadísticas.
+    """
+    partido = partido_repository.obtener_por_id(partido_id)
+    if partido is None:
+        raise PartidoNoEncontradoError(f"No existe el partido {partido_id}")
+
+    torneo = torneo_repository.obtener_por_id(partido.torneo_id)
+    permitido, motivo = puede_corregirse(torneo, partido)
+    if not permitido:
+        raise ResultadoInvalidoError(motivo)
+
+    if ganador_id not in (partido.jugador1_id, partido.jugador2_id):
+        raise ResultadoInvalidoError(
+            "El ganador tiene que ser uno de los dos jugadores del partido"
+        )
+
+    if rondas_jugadas is not None and rondas_jugadas not in (2, 3):
+        raise ResultadoInvalidoError(
+            "Las rondas jugadas solo pueden ser 2 (barrida) o 3 (cerrado)"
+        )
+
+    partido_repository.registrar_resultado(
+        partido_id, ganador_id, peleador1_id, peleador2_id, rondas_jugadas
+    )
+
+    # No se vuelve a avanzar el torneo: lo que tenía que generarse ya está,
+    # y esta corrección solo se permite cuando nada depende del resultado.
+    return partido_repository.obtener_por_id(partido_id).to_dict()
+
+
+def listar_corregibles(torneo_id):
+    """Los partidos ya jugados que todavía se pueden corregir."""
+    torneo = torneo_repository.obtener_por_id(torneo_id)
+    if torneo is None:
+        return []
+
+    corregibles = []
+    for partido in partido_repository.obtener_por_torneo(torneo_id):
+        if partido.estado != "finalizado" or partido.es_pase_libre:
+            continue
+        permitido, _ = puede_corregirse(torneo, partido)
+        if permitido:
+            corregibles.append(partido.to_dict())
+    return corregibles

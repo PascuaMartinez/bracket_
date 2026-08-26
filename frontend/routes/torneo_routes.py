@@ -192,3 +192,42 @@ def resolver_empate(torneo_id, grupo_id):
         request.form.get("observacion") or None,
     )
     return redirect(url_for("torneo.detalle", torneo_id=torneo_id))
+
+
+@torneo_bp.route("/<int:torneo_id>/corregir", methods=["GET", "POST"])
+@auth.requiere_sesion
+def corregir(torneo_id):
+    """
+    Corregir un resultado ya cargado.
+
+    Sirve para el error de carga: se tocó el nombre equivocado o se
+    registró mal el personaje. Sin esto, ese error quedaría para siempre
+    en las estadísticas.
+    """
+    jugadores = {j["id"]: j for j in api.get("/jugadores", incluir_ocultos="si")}
+
+    if request.method == "POST":
+        try:
+            torneos.corregir_resultado(int(request.form["partido_id"]), {
+                "ganador_id": int(request.form["ganador_id"]),
+                "peleador1_id": _entero_o_nada(request.form.get("peleador1_id")),
+                "peleador2_id": _entero_o_nada(request.form.get("peleador2_id")),
+                "rondas_jugadas": _entero_o_nada(request.form.get("rondas_jugadas")),
+            })
+        except api.ErrorDeApi as e:
+            return render_template(
+                "torneos/corregir.html", torneo=torneos.obtener(torneo_id),
+                partidos=torneos.corregibles(torneo_id), jugadores=jugadores,
+                peleadores=api.get("/peleadores"), error=str(e),
+            ), 400
+
+        return redirect(url_for("torneo.detalle", torneo_id=torneo_id))
+
+    return render_template(
+        "torneos/corregir.html",
+        torneo=torneos.obtener(torneo_id),
+        partidos=torneos.corregibles(torneo_id),
+        jugadores=jugadores,
+        peleadores=api.get("/peleadores"),
+        error=None,
+    )
