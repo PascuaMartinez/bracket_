@@ -924,3 +924,39 @@ main { padding: 36px 0 64px; }
   color: var(--pine);
   font-weight: 600;
 }
+
+/* --- Lista reordenable --- */
+
+.lista-ordenable {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 8px;
+}
+
+.fila-ordenable {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+  cursor: grab;
+}
+
+.fila-ordenable:last-child { border-bottom: none; }
+
+/* El que se está arrastrando se atenúa: es lo que indica cuál se está
+   moviendo cuando la lista se reacomoda debajo. */
+.arrastrando { opacity: 0.4; }
+
+.posicion {
+  font-family: var(--font-dato);
+  font-size: 13px;
+  color: var(--graphite);
+  min-width: 20px;
+}
+
+.nombre-ordenable { flex: 1; }
+
+.botones-mover { display: flex; gap: 10px; }
+.botones-mover button { font-size: 16px; text-decoration: none; }

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Reordenar el cuadro · Bracket{% endblock %}
+
+{% block content %}
+<p class="dato-tenue">{{ torneo.nombre }}</p>
+<h1 class="titulo-pagina">Reordenar el cuadro</h1>
+<p class="subtitulo">
+  El orden define los cruces: el primero se enfrenta al último, el segundo
+  al anteúltimo, y así hacia el centro.
+</p>
+
+{% if error %}<div class="aviso-error">{{ error }}</div>{% endif %}
+
+{% if cruces %}
+<form method="post">
+  <ol id="lista-orden" class="lista-ordenable panel">
+    {% for jugador in cruces %}
+    <li draggable="true" class="fila-ordenable">
+      <span class="posicion">{{ loop.index }}</span>
+      <span class="nombre-ordenable">{{ jugador.nombre }}</span>
+      {# Los botones hacen lo mismo que arrastrar: en un teléfono arrastrar
+         es incómodo, y con el teclado directamente no se puede. #}
+      <span class="botones-mover">
+        <button type="button" class="enlace-boton" data-mover="arriba"
+                aria-label="Subir a {{ jugador.nombre }}">↑</button>
+        <button type="button" class="enlace-boton" data-mover="abajo"
+                aria-label="Bajar a {{ jugador.nombre }}">↓</button>
+      </span>
+      <input type="hidden" name="jugadores_ids" value="{{ jugador.id }}">
+    </li>
+    {% endfor %}
+  </ol>
+
+  <div class="acciones">
+    <button type="submit" class="boton">Guardar el orden</button>
+    <a class="boton-secundario" href="{{ url_for('torneo.detalle', torneo_id=torneo.id) }}">Cancelar</a>
+  </div>
+</form>
+{% else %}
+<div class="vacio">
+  <p>No hay un cuadro que reordenar.</p>
+  <p class="tenue">
+    Solo se puede reordenar antes de que se juegue algún partido del
+    cuadro: después, cambiar los cruces significaría descartar resultados
+    reales.
+  </p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/reordenar.js') }}"></script>
+{% endblock %}

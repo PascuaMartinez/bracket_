@@ -615,3 +615,75 @@ def listar_corregibles(torneo_id):
         if permitido:
             corregibles.append(partido.to_dict())
     return corregibles
+
+
+def puede_resembrarse(torneo_id):
+    """
+    Si el cuadro todavía se puede reordenar.
+
+    Solo mientras no se haya jugado nada de la primera ronda. Después de
+    eso, cambiar los cruces significaría descartar resultados reales para
+    reemplazarlos por partidos que nunca ocurrieron.
+
+    Los pases libres no cuentan como jugados: no se jugaron, y son
+    justamente parte de lo que se quiere poder reacomodar.
+    """
+    primera_ronda = partido_repository.obtener_por_ronda(torneo_id, 1)
+    if not primera_ronda:
+        return False, "Este torneo no tiene un cuadro de eliminación."
+
+    jugados = [p for p in primera_ronda
+               if p.estado == "finalizado" and not p.es_pase_libre]
+    if jugados:
+        return False, "Ya se jugó algún partido del cuadro."
+
+    return True, None
+
+
+def resembrar(torneo_id, jugadores_en_orden):
+    """
+    Rehace la primera ronda con un orden nuevo.
+
+    La siembra automática enfrenta al primero con el último y así hacia el
+    centro, que es lo correcto por nivel. Pero quien organiza a veces
+    sabe cosas que el sistema no: que dos vinieron juntos y preferirían no
+    cruzarse de entrada, que alguien se tiene que ir temprano.
+
+    Se borran los partidos de la primera ronda y se crean de nuevo. Es
+    seguro porque solo se permite cuando ninguno se jugó: no hay ningún
+    resultado que perder.
+    """
+    permitido, motivo = puede_resembrarse(torneo_id)
+    if not permitido:
+        raise ResultadoInvalidoError(motivo)
+
+    inscriptos = {
+        p["jugador_id"] for p in torneo_repository.obtener_participantes(torneo_id)
+    }
+    nuevos = list(dict.fromkeys(jugadores_en_orden))
+
+    # El orden nuevo tiene que tener exactamente a los mismos: si faltara
+    # alguien quedaría fuera del torneo sin haberlo decidido, y si sobrara
+    # entraría alguien que no se anotó.
+    if set(nuevos) != inscriptos:
+        raise ResultadoInvalidoError(
+            "El orden nuevo tiene que incluir exactamente a los mismos jugadores"
+        )
+
+    partido_repository.eliminar_ronda(torneo_id, 1)
+
+    cruces = bracket_service.sembrar_primera_ronda(nuevos)
+    orden = partido_repository.obtener_max_orden(torneo_id)
+    partidos = []
+    for jugador1, jugador2 in cruces:
+        orden += 1
+        es_pase_libre = jugador2 is None
+        partidos.append({
+            "torneo_id": torneo_id, "jugador1_id": jugador1, "jugador2_id": jugador2,
+            "orden": orden, "jornada": None, "ronda": 1,
+            "es_pase_libre": es_pase_libre,
+            "ganador_id": jugador1 if es_pase_libre else None,
+            "estado": "finalizado" if es_pase_libre else "pendiente",
+        })
+    partido_repository.crear_muchos(partidos, con_ronda=True)
+    return len(partidos)

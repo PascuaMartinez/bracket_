@@ -271,3 +271,16 @@ def historial_entre(jugador1_id, jugador2_id):
         if fila["ganador_id"] in resultado:
             resultado[fila["ganador_id"]] = fila["veces"]
     return resultado
+
+
+def eliminar_ronda(torneo_id, ronda):
+    """Borra los partidos de una ronda. Se usa al reordenar el cuadro,
+    donde se rehace la ronda entera."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "DELETE FROM partido WHERE torneo_id = %s AND ronda = %s", (torneo_id, ronda)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()

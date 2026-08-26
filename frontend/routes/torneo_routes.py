@@ -231,3 +231,58 @@ def corregir(torneo_id):
         peleadores=api.get("/peleadores"),
         error=None,
     )
+
+
+@torneo_bp.route("/<int:torneo_id>/reordenar", methods=["GET", "POST"])
+@auth.requiere_sesion
+def reordenar(torneo_id):
+    """
+    Reordenar los cruces del cuadro antes de que arranque.
+
+    La siembra automática ordena por nivel, que es lo correcto en general.
+    Pero quien organiza a veces sabe cosas que el sistema no: que dos
+    vinieron juntos y preferirían no cruzarse de entrada, que alguien se
+    tiene que ir temprano.
+    """
+    if request.method == "POST":
+        try:
+            torneos.resembrar(
+                torneo_id,
+                [int(j) for j in request.form.getlist("jugadores_ids")],
+            )
+        except api.ErrorDeApi as e:
+            return render_template(
+                "torneos/reordenar.html", torneo=torneos.obtener(torneo_id),
+                cruces=_cruces_actuales(torneo_id), error=str(e),
+            ), 400
+
+        return redirect(url_for("torneo.detalle", torneo_id=torneo_id))
+
+    return render_template(
+        "torneos/reordenar.html",
+        torneo=torneos.obtener(torneo_id),
+        cruces=_cruces_actuales(torneo_id),
+        error=None,
+    )
+
+
+def _cruces_actuales(torneo_id):
+    """
+    Los jugadores del cuadro en el orden de siembra actual.
+
+    Se reconstruye desde los partidos y no se guarda aparte: el cuadro ya
+    es la fuente de verdad del orden, y tener una segunda copia sería otra
+    cosa que puede desincronizarse.
+    """
+    jugadores = {j["id"]: j for j in api.get("/jugadores", incluir_ocultos="si")}
+    partidos = [p for p in api.get(f"/torneos/{torneo_id}/partidos")
+                if p.get("ronda") == 1]
+    partidos.sort(key=lambda p: p.get("orden") or 0)
+
+    # La siembra enfrenta al primero con el último: para recuperar el
+    # orden original se leen los de arriba hacia abajo y los de abajo en
+    # sentido inverso.
+    arriba = [p["jugador1_id"] for p in partidos]
+    abajo = [p["jugador2_id"] for p in reversed(partidos) if p["jugador2_id"]]
+
+    return [jugadores.get(jid, {"id": jid, "nombre": "?"}) for jid in arriba + abajo]

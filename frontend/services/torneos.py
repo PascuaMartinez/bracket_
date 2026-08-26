@@ -68,6 +68,10 @@ def corregir_resultado(partido_id, datos):
     return api.put(f"/partidos/{partido_id}/resultado", datos)
 
 
+def resembrar(torneo_id, jugadores_ids):
+    return api.post(f"/torneos/{torneo_id}/resembrar", {"jugadores_ids": jugadores_ids})
+
+
 def crear(datos):
     return api.post("/torneos", datos)
 

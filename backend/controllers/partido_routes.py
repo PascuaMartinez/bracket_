@@ -110,3 +110,14 @@ def corregir_resultado(partido_id):
         return jsonify({"error": str(e)}), 400
     except partido_service.PartidoNoEncontradoError as e:
         return jsonify({"error": str(e)}), 404
+
+
+@partido_bp.route("/torneos/<int:torneo_id>/resembrar", methods=["POST"])
+def resembrar(torneo_id):
+    """Rehace la primera ronda del cuadro con un orden nuevo."""
+    datos = request.get_json(silent=True) or {}
+    try:
+        cantidad = partido_service.resembrar(torneo_id, datos.get("jugadores_ids", []))
+        return jsonify({"partidos": cantidad}), 200
+    except partido_service.ResultadoInvalidoError as e:
+        return jsonify({"error": str(e)}), 400
