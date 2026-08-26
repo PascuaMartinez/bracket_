@@ -77,3 +77,64 @@ def test_dos_empatados_siempre_se_separan():
     )
 
     assert orden == [2, 1]
+
+
+# --- Enfrentamiento directo ---
+
+def partido_de_grupo(jugador1, jugador2, ganador):
+    return SimpleNamespace(
+        jugador1_id=jugador1, jugador2_id=jugador2, ganador_id=ganador,
+        estado="finalizado", ronda=None, es_desempate=False,
+    )
+
+
+def test_dos_empatados_se_resuelven_por_lo_que_ya_jugaron():
+    """Si ya se enfrentaron en el grupo, hacerlos jugar de nuevo sería
+    ignorar ese resultado."""
+    from services.grupos_service import resolver_por_enfrentamiento_directo
+
+    bloques = resolver_por_enfrentamiento_directo(
+        [1, 2], [partido_de_grupo(1, 2, ganador=1)]
+    )
+
+    assert bloques == [[1], [2]]
+
+
+def test_el_triangular_perfecto_no_se_resuelve_asi():
+    """Cada uno ganó uno y perdió uno: no hay nada en el grupo que los
+    separe."""
+    from services.grupos_service import resolver_por_enfrentamiento_directo
+
+    bloques = resolver_por_enfrentamiento_directo(
+        [1, 2, 3],
+        [partido_de_grupo(1, 2, 1), partido_de_grupo(2, 3, 2), partido_de_grupo(3, 1, 3)],
+    )
+
+    assert bloques == [[1, 2, 3]]
+
+
+def test_puede_resolver_parcialmente():
+    """Uno queda definido y los otros siguen empatados: solo esos vuelven
+    a jugar, porque el primero ya se ganó su lugar."""
+    from services.grupos_service import resolver_por_enfrentamiento_directo
+
+    bloques = resolver_por_enfrentamiento_directo(
+        [1, 2, 3], [partido_de_grupo(1, 2, 1), partido_de_grupo(1, 3, 1)]
+    )
+
+    assert bloques == [[1], [2, 3]]
+
+
+def test_los_partidos_contra_terceros_no_cuentan():
+    """Lo que hicieron contra otros no dice nada sobre cómo se ordenan
+    entre sí."""
+    from services.grupos_service import resolver_por_enfrentamiento_directo
+
+    bloques = resolver_por_enfrentamiento_directo(
+        [1, 2],
+        [partido_de_grupo(1, 9, ganador=1), partido_de_grupo(2, 9, ganador=9)],
+    )
+
+    # Ninguno le ganó al otro: siguen empatados pese a records distintos
+    # contra el jugador 9.
+    assert bloques == [[1, 2]]

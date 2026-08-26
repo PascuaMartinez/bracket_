@@ -286,3 +286,12 @@ def eliminar_ronda(torneo_id, ronda):
     conn.commit()
     cursor.close()
     conn.close()
+
+
+def eliminar(partido_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM partido WHERE id = %s", (partido_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()

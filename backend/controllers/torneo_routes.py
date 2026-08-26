@@ -59,6 +59,18 @@ def resolver_empate(torneo_id, grupo_id):
     return "", 204
 
 
+@torneo_bp.route("/<int:torneo_id>/repetir-desempate", methods=["POST"])
+def repetir_desempate(torneo_id):
+    """Vuelve a jugar un desempate que no resolvió."""
+    from services import partido_service
+
+    datos = request.get_json(silent=True) or {}
+    cantidad = partido_service.repetir_desempate(
+        torneo_id, datos.get("jugadores_ids", [])
+    )
+    return jsonify({"partidos": cantidad}), 200
+
+
 @torneo_bp.route("/<int:torneo_id>/imagen", methods=["GET"])
 def imagen(torneo_id):
     """La tabla del torneo como PNG, para compartir."""

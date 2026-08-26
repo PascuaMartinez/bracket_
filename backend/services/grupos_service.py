@@ -118,3 +118,48 @@ def detectar_empate_en_el_corte(tabla, cupos):
         "empatados": empatados,
         "lugares_en_disputa": cupos - ya_clasificados,
     }
+
+
+def resolver_por_enfrentamiento_directo(empatados, partidos_del_grupo):
+    """
+    Ordena a los empatados por lo que pasó ENTRE ELLOS en el grupo.
+
+    Si Ana le ganó a Beto durante la fase de grupos, ya se enfrentaron y
+    hay un resultado: hacerlos jugar de nuevo sería ignorar lo que pasó.
+    Se arma una tabla chica solo con los partidos entre los empatados y se
+    los ordena por eso.
+
+    Devuelve una lista de bloques. Cada bloque son los que quedaron
+    igualados entre sí; un bloque de uno es alguien ya definido. Con
+    [[Ana], [Beto, Caro]] la lectura es: Ana quedó primera, y Beto y Caro
+    siguen empatados por lo que sigue.
+
+    Devolver bloques y no una lista plana es lo que permite que un
+    desempate resuelva PARCIALMENTE: quien ya quedó definido no vuelve a
+    jugar.
+    """
+    ids = set(empatados)
+
+    victorias = {jugador: 0 for jugador in empatados}
+    jugados = {jugador: 0 for jugador in empatados}
+
+    for partido in partidos_del_grupo:
+        # Solo los partidos entre los empatados: los que jugaron contra
+        # otros no dicen nada sobre cómo se ordenan entre sí.
+        if partido.jugador1_id not in ids or partido.jugador2_id not in ids:
+            continue
+        if partido.estado != "finalizado" or partido.ganador_id is None:
+            continue
+
+        perdedor = (partido.jugador2_id if partido.ganador_id == partido.jugador1_id
+                    else partido.jugador1_id)
+        victorias[partido.ganador_id] += 1
+        jugados[partido.ganador_id] += 1
+        jugados[perdedor] += 1
+
+    # Se agrupan por cantidad de victorias entre ellos, de más a menos.
+    por_victorias = {}
+    for jugador in empatados:
+        por_victorias.setdefault(victorias[jugador], []).append(jugador)
+
+    return [por_victorias[cantidad] for cantidad in sorted(por_victorias, reverse=True)]

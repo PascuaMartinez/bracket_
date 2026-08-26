@@ -72,6 +72,11 @@ def resembrar(torneo_id, jugadores_ids):
     return api.post(f"/torneos/{torneo_id}/resembrar", {"jugadores_ids": jugadores_ids})
 
 
+def repetir_desempate(torneo_id, jugadores_ids):
+    return api.post(f"/torneos/{torneo_id}/repetir-desempate",
+                    {"jugadores_ids": jugadores_ids})
+
+
 def crear(datos):
     return api.post("/torneos", datos)
 

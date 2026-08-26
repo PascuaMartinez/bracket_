@@ -454,15 +454,13 @@ def _cerrar_fase_de_grupos(torneo):
 
         empate = grupos_service.detectar_empate_en_el_corte(tabla, cupos_del_grupo)
         if empate is not None:
-            # Los empatados hicieron exactamente lo mismo, así que se
-            # resuelve donde corresponde: jugando. Se generan los partidos
-            # de desempate y el torneo espera esos resultados.
-            hubo_empate = True
-            decididos = [f["jugador_id"] for f in tabla
-                         if f["puntos"] > empate["empatados"][0]["puntos"]]
-            grupo_repository.marcar_clasificados(grupo["id"], decididos)
-            _generar_desempate(torneo.id, [f["jugador_id"] for f in empate["empatados"]])
-            continue
+            resuelto = _resolver_empate_del_grupo(
+                torneo, grupo, tabla, empate, cupos_del_grupo
+            )
+            if not resuelto:
+                hubo_empate = True
+                continue
+            tabla = tabla_service.calcular_tabla_de_grupo(torneo.id, grupo["id"])
 
         pasan = [f["jugador_id"] for f in tabla[:cupos_del_grupo]]
         grupo_repository.marcar_clasificados(grupo["id"], pasan)
@@ -763,7 +761,10 @@ def _resolver_desempates_terminados(torneo):
 
         orden = _ordenar_por_desempate(desempates, jugadores_del_grupo)
         if orden is None:
-            continue   # el desempate no los separó: decide el organizador
+            # El desempate tampoco los separó -- en un triangular puede
+            # pasar que cada uno gane uno. Queda para que lo decida el
+            # organizador, o para volver a jugarlo si el grupo prefiere.
+            continue
 
         ya_clasificados = [j["jugador_id"]
                            for j in grupo_repository.obtener_jugadores(grupo["id"])
@@ -798,3 +799,69 @@ def _ordenar_por_desempate(desempates, jugadores):
         return None
 
     return ordenados
+
+
+def _resolver_empate_del_grupo(torneo, grupo, tabla, empate, cupos_del_grupo):
+    """
+    Intenta resolver un empate sin hacer jugar de más.
+
+    Primero se mira el enfrentamiento directo: si los empatados ya se
+    cruzaron durante el grupo, ese resultado los ordena y no hace falta
+    jugar nada. Recién si eso no alcanza se generan partidos.
+
+    Devuelve True si quedó resuelto del todo.
+    """
+    empatados = [f["jugador_id"] for f in empate["empatados"]]
+    ya_clasificados = [f["jugador_id"] for f in tabla
+                       if f["puntos"] > empate["empatados"][0]["puntos"]]
+
+    partidos_del_grupo = [
+        p for p in partido_repository.obtener_por_torneo(torneo.id)
+        if p.ronda is None and not p.es_desempate
+    ]
+    bloques = grupos_service.resolver_por_enfrentamiento_directo(
+        empatados, partidos_del_grupo
+    )
+
+    # Se van tomando bloques mientras entren enteros en los lugares que
+    # quedan. Un bloque que no entra entero es el que hay que desempatar:
+    # sus integrantes están igualados y no hay forma de elegir entre ellos.
+    lugares = empate["lugares_en_disputa"]
+    pasan = list(ya_clasificados)
+    for bloque in bloques:
+        if lugares <= 0:
+            break
+        if len(bloque) <= lugares:
+            pasan += bloque
+            lugares -= len(bloque)
+            continue
+
+        # Este bloque se disputa los lugares que quedan.
+        grupo_repository.marcar_clasificados(grupo["id"], pasan)
+        _generar_desempate(torneo.id, bloque)
+        return False
+
+    grupo_repository.marcar_clasificados(grupo["id"], pasan)
+    return True
+
+
+def repetir_desempate(torneo_id, jugadores_ids):
+    """
+    Vuelve a jugar un desempate que no resolvió.
+
+    Cuando un triangular termina con cada uno ganando uno, hay dos
+    salidas: que lo decida el organizador, o volver a jugarlo. La segunda
+    puede volver a empatar, pero es una decisión legítima -- a veces el
+    grupo prefiere resolverlo en la cancha aunque tarde.
+
+    Los partidos anteriores se borran en vez de acumularse: son intentos
+    fallidos de resolver lo mismo, y dejarlos haría que la mini tabla del
+    desempate mezcle dos rondas distintas.
+    """
+    anteriores = [p for p in partido_repository.obtener_por_torneo(torneo_id)
+                  if p.es_desempate and p.jugador1_id in jugadores_ids
+                  and p.jugador2_id in jugadores_ids]
+    for partido in anteriores:
+        partido_repository.eliminar(partido.id)
+
+    return _generar_desempate(torneo_id, list(jugadores_ids))

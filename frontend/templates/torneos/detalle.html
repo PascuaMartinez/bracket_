@@ -72,6 +72,24 @@
   </tbody>
 </table>
 </div>
+{% set sin_resolver = grupo.tabla | selectattr('sin_resolver') | list %}
+{% if sin_resolver and hay_sesion() %}
+{# Cuando el desempate tampoco separó -- en un triangular cada uno puede
+   ganar uno -- hay dos salidas: decidirlo a mano arriba, o volver a
+   jugarlo. La segunda puede volver a empatar, pero es una decisión
+   legítima: a veces el grupo prefiere resolverlo en la cancha. #}
+<form method="post" class="formulario-suelto"
+      action="{{ url_for('torneo.repetir_desempate', torneo_id=torneo.id) }}">
+  {% for fila in sin_resolver %}
+  <input type="hidden" name="jugadores_ids" value="{{ fila.jugador_id }}">
+  {% endfor %}
+  <button type="submit" class="boton-secundario">Volver a jugar el desempate</button>
+  <p class="ayuda">
+    Descarta los partidos de desempate y genera unos nuevos entre los que
+    siguen empatados.
+  </p>
+</form>
+{% endif %}
 {% endfor %}
 
 <h2 class="titulo-seccion">Posiciones finales</h2>

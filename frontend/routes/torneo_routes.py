@@ -286,3 +286,12 @@ def _cruces_actuales(torneo_id):
     abajo = [p["jugador2_id"] for p in reversed(partidos) if p["jugador2_id"]]
 
     return [jugadores.get(jid, {"id": jid, "nombre": "?"}) for jid in arriba + abajo]
+
+
+@torneo_bp.route("/<int:torneo_id>/repetir-desempate", methods=["POST"])
+@auth.requiere_sesion
+def repetir_desempate(torneo_id):
+    torneos.repetir_desempate(
+        torneo_id, [int(j) for j in request.form.getlist("jugadores_ids")]
+    )
+    return redirect(url_for("torneo.detalle", torneo_id=torneo_id))
