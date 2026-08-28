@@ -11,39 +11,34 @@
        distinto que "1 de 28". #}
     van {{ torneo.partidos_jugados }} de {{ torneo.partidos_totales }} partidos.
   </p>
-
-  <p class="ayuda">
-    Solo puede haber un torneo abierto a la vez: la pantalla de cargar
-    resultados muestra el próximo partido, y con dos torneos en juego no
-    habría forma de saber a cuál corresponde.
-  </p>
+  <p class="ayuda">No puede haber dos torneos abiertos a la vez.</p>
 
   <div class="acciones">
     <a class="boton" href="{{ url_for('torneo.detalle', torneo_id=torneo.id) }}">
-      Ir a ese torneo
+      Continuar torneo en curso
     </a>
     <button type="button" class="boton-secundario"
             onclick="document.getElementById('confirmar-descartar').showModal()">
-      Crear uno nuevo igual
+      Crear nuevo torneo
     </button>
   </div>
 </div>
 
-{# La segunda confirmación: la primera pantalla informa, esta advierte lo
-   que se pierde. Separarlas evita que alguien apure el clic sin leer. #}
+{# La confirmación va aparte: la pantalla informa, el diálogo advierte lo
+   que se pierde. Juntas, es fácil apurar el clic sin leer. #}
 <dialog id="confirmar-descartar" class="dialogo">
   <h2 class="titulo-seccion">Descartar {{ torneo.nombre }}</h2>
+  {% if torneo.partidos_jugados %}
   <p>
-    Se borra el torneo entero con sus
+    Se borra el torneo con sus
     {{ torneo.partidos_jugados }} partido{{ 's' if torneo.partidos_jugados != 1 }}
     ya jugado{{ 's' if torneo.partidos_jugados != 1 }}. No se puede deshacer.
   </p>
-  <p class="ayuda">
-    No hay forma de conservarlo a medias: darlo por terminado dejaría un
-    torneo donde unos jugaron cinco partidos y otros dos, y esa
-    desigualdad se trasladaría al historial y a los ratings como si fuera
-    un resultado real.
-  </p>
+  {% else %}
+  {# Sin partidos jugados no hay nada que perder: decir "con sus 0
+     partidos" sonaría a advertencia vacía. #}
+  <p>Se borra el torneo. Todavía no se jugó ningún partido.</p>
+  {% endif %}
 
   <div class="acciones">
     <form method="post" action="{{ url_for('torneo.descartar_en_curso') }}">

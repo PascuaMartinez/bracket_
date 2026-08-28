@@ -102,7 +102,13 @@ def eliminar(torneo_id):
 
     El orden importa: las claves foráneas impiden dejar filas apuntando a
     algo que ya no existe, así que se borra de las hojas hacia la raíz.
-    Las vidas cuelgan de la participación, la participación del torneo.
+    Las vidas y la asignación a grupos cuelgan de la participación; la
+    participación y los grupos, del torneo.
+
+    IMPORTANTE: cada tabla nueva que cuelgue de un torneo tiene que
+    sumarse acá. Ya pasó dos veces que se agregara una y este borrado
+    quedara viejo, y el síntoma es confuso -- un error de clave foránea
+    al borrar, lejos de donde se hizo el cambio.
 
     Va todo en una transacción: si fallara a la mitad, el torneo quedaría
     parcialmente borrado -- sin partidos pero todavía en la lista, o al
@@ -118,8 +124,15 @@ def eliminar(torneo_id):
                WHERE tj.torneo_id = %s""",
             (torneo_id,),
         )
+        cursor.execute(
+            """DELETE tjg FROM torneo_jugador_grupo tjg
+               JOIN torneo_jugador tj ON tj.id = tjg.torneo_jugador_id
+               WHERE tj.torneo_id = %s""",
+            (torneo_id,),
+        )
         cursor.execute("DELETE FROM partido WHERE torneo_id = %s", (torneo_id,))
         cursor.execute("DELETE FROM torneo_jugador WHERE torneo_id = %s", (torneo_id,))
+        cursor.execute("DELETE FROM grupo WHERE torneo_id = %s", (torneo_id,))
         cursor.execute("DELETE FROM torneo WHERE id = %s", (torneo_id,))
         filas_afectadas = cursor.rowcount
         conn.commit()

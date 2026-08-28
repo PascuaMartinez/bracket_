@@ -972,3 +972,13 @@ main { padding: 36px 0 64px; }
   padding: 8px 14px;
   margin: 0 0 20px;
 }
+
+/* Los botones de un diálogo se alinean aunque alguno esté dentro de un
+   formulario: sin esto, el form se comporta como un bloque y desalinea
+   verticalmente a los que están sueltos a su lado. */
+.dialogo .acciones { align-items: center; }
+.dialogo .acciones form { display: flex; }
+
+/* El botón de riesgo dentro de un diálogo no lleva el margen superior
+   que usa cuando va suelto al pie de una pantalla. */
+.dialogo .boton-peligro { margin-top: 0; }
