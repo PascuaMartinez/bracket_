@@ -77,6 +77,11 @@ def repetir_desempate(torneo_id, jugadores_ids):
                     {"jugadores_ids": jugadores_ids})
 
 
+def en_curso():
+    """El torneo abierto, si hay alguno."""
+    return api.get("/torneos/en-curso")
+
+
 def crear(datos):
     return api.post("/torneos", datos)
 

@@ -24,6 +24,22 @@ def obtener_por_id(torneo_id):
     return Torneo.from_row(fila) if fila else None
 
 
+def obtener_sin_finalizar():
+    """El torneo que está abierto, si hay alguno.
+
+    Se devuelve el torneo entero y no solo si existe: para avisar de forma
+    útil hace falta poder decir cuál es y cuánto lleva jugado."""
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        "SELECT * FROM torneo WHERE estado <> 'finalizado' ORDER BY id DESC LIMIT 1"
+    )
+    fila = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return Torneo.from_row(fila) if fila else None
+
+
 def existe_sin_finalizar():
     """Si hay algún torneo que todavía no terminó. La app está pensada
     para acompañar un torneo mientras se juega, y dos en paralelo harían

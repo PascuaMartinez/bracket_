@@ -23,6 +23,13 @@ def nuevo():
     jugadores = api.get("/jugadores")
 
     if request.method == "GET":
+        # El aviso va ANTES del formulario. Dejar que alguien elija
+        # jugadores, formato y fecha para rechazarlo al final es hacerle
+        # perder el trabajo por una regla que se podía decir al principio.
+        abierto = torneos.en_curso()
+        if abierto and request.args.get("confirmado") != "si":
+            return render_template("torneos/hay_uno_en_curso.html", torneo=abierto)
+
         return render_template("torneos/nuevo.html", jugadores=jugadores, error=None)
 
     datos = {
@@ -305,3 +312,19 @@ def repetir_desempate(torneo_id):
         torneo_id, [int(j) for j in request.form.getlist("jugadores_ids")]
     )
     return redirect(url_for("torneo.detalle", torneo_id=torneo_id))
+
+
+@torneo_bp.route("/descartar-en-curso", methods=["POST"])
+@auth.requiere_sesion
+def descartar_en_curso():
+    """
+    Borra el torneo abierto para poder crear otro.
+
+    Es destructivo a propósito y no hay alternativa suave: dar por
+    finalizado un torneo a medio jugar sería peor. Sus partidos
+    incompletos entrarían al historial como si fueran un torneo real, con
+    jugadores que jugaron cinco partidos y otros que jugaron dos, y esa
+    distorsión se propagaría a la tabla histórica y a los ratings.
+    """
+    torneos.eliminar(int(request.form["torneo_id"]))
+    return redirect(url_for("torneo.nuevo", confirmado="si"))

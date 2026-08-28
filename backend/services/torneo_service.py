@@ -5,7 +5,9 @@ Crear un torneo no es solo insertar una fila: hay que validar el modo,
 que los jugadores existan y que sean suficientes, y dejar inscripta la
 participación de cada uno. Todo eso es una sola operación desde afuera.
 """
-from repositories import jugador_repository, torneo_repository
+from repositories import (
+    jugador_repository, partido_repository, torneo_repository,
+)
 
 # Por ahora solo el primer formato. La lista crece cuando se implementen
 # los demás, y validar contra ella evita que llegue a la base un modo
@@ -145,3 +147,29 @@ def _validar_jugadores(jugadores_ids):
             raise TorneoInvalidoError(f"No existe el jugador {jugador_id}")
 
     return unicos
+
+
+def torneo_en_curso():
+    """
+    El torneo abierto con cuánto lleva jugado, o None.
+
+    Sirve para avisar ANTES de que alguien llene el formulario de un
+    torneo nuevo. Rechazarlo al final, después de elegir jugadores y
+    formato, es hacerle perder el trabajo por una regla que se podía
+    decir al principio.
+
+    Se informa cuántos partidos van de cuántos porque es lo que permite
+    decidir: "12 de 28" pesa distinto que "1 de 28".
+    """
+    torneo = torneo_repository.obtener_sin_finalizar()
+    if torneo is None:
+        return None
+
+    partidos = partido_repository.obtener_por_torneo(torneo.id)
+    jugados = [p for p in partidos if p.estado == "finalizado"]
+
+    return {
+        **torneo.to_dict(),
+        "partidos_totales": len(partidos),
+        "partidos_jugados": len(jugados),
+    }

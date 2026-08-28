@@ -14,6 +14,16 @@ def listar():
     return jsonify(torneo_service.listar_torneos()), 200
 
 
+@torneo_bp.route("/en-curso", methods=["GET"])
+def en_curso():
+    """El torneo abierto, si hay alguno. 204 si no hay ninguno: la
+    consulta salió bien y simplemente no hay nada que informar."""
+    torneo = torneo_service.torneo_en_curso()
+    if torneo is None:
+        return "", 204
+    return jsonify(torneo), 200
+
+
 @torneo_bp.route("/tabla-historica", methods=["GET"])
 def tabla_historica():
     return jsonify(tabla_historica_service.calcular_tabla_historica()), 200
