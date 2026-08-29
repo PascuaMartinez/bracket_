@@ -31,7 +31,12 @@
       <td class="dato">{{ fila.pg }}</td>
       <td class="dato">{{ (fila.win_rate * 100) | round | int }}%</td>
       <td class="dato tenue">
-        {%- for i in fila.insignias %}{{ i.puesto }}°{{ " · " if not loop.last }}{% endfor -%}
+        {#- Cada insignia con el emoji de su formato: el mismo puesto se
+            reconoce distinto en un cuadro que en una tabla. -#}
+        {%- for i in fila.insignias -%}
+        <span title="{{ i.torneo_nombre }}">{{ i | emoji_puesto(i.modo) or (i.puesto ~ "°") }}</span>
+        {{- " " if not loop.last }}
+        {%- endfor -%}
       </td>
     </tr>
     {% endfor %}

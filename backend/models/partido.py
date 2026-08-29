@@ -5,6 +5,7 @@ class Partido:
                  jugador1_peleador_id=None, jugador2_peleador_id=None,
                  rondas_jugadas=None, orden=None, jornada=None, ronda=None,
                  es_pase_libre=False, es_desempate=False,
+                 es_tercer_puesto=False,
                  estado="pendiente", fecha_jugado=None):
         self.id = id
         self.torneo_id = torneo_id
@@ -19,6 +20,7 @@ class Partido:
         self.ronda = ronda
         self.es_pase_libre = es_pase_libre
         self.es_desempate = es_desempate
+        self.es_tercer_puesto = es_tercer_puesto
         self.estado = estado
         self.fecha_jugado = fecha_jugado
 
@@ -37,6 +39,7 @@ class Partido:
             "ronda": self.ronda,
             "es_pase_libre": self.es_pase_libre,
             "es_desempate": self.es_desempate,
+            "es_tercer_puesto": self.es_tercer_puesto,
             "estado": self.estado,
             "fecha_jugado": self.fecha_jugado.isoformat() if self.fecha_jugado else None,
         }
@@ -57,6 +60,7 @@ class Partido:
             ronda=row.get("ronda"),
             es_pase_libre=bool(row.get("es_pase_libre", False)),
             es_desempate=bool(row.get("es_desempate", False)),
+            es_tercer_puesto=bool(row.get("es_tercer_puesto", False)),
             estado=row.get("estado", "pendiente"),
             fecha_jugado=row.get("fecha_jugado"),
         )

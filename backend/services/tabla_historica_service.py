@@ -81,6 +81,10 @@ def _calcular_tabla_historica():
                 "torneo_id": torneo.id,
                 "torneo_nombre": torneo.nombre,
                 "puesto": fila["puesto"],
+                # El modo viaja con la insignia porque el mismo puesto se
+                # reconoce distinto según el formato: un quinto en un
+                # cuadro es alguien que llegó a cuartos.
+                "modo": torneo.modo,
             })
 
     # Los ocultos salen del ranking, pero sus partidos ya alimentaron el

@@ -256,6 +256,32 @@ def _avanzar_bracket(torneo_id, ronda):
 
     orden = partido_repository.obtener_max_orden(torneo_id)
     partidos = []
+
+    # Cuando la ronda que termina son las semifinales, los dos que
+    # perdieron juegan por el tercer puesto. Sin ese partido quedarían
+    # igualados, y "llegué a semis" no distingue a quien terminó tercero
+    # de quien terminó cuarto.
+    #
+    # Va ANTES de la final: es el orden en que se juegan estos torneos, y
+    # además la final conviene que cierre el evento.
+    if len(ganadores) == 2:
+        perdedores = [_perdedor_de(p) for p in partidos_ronda]
+        if all(perdedores):
+            orden += 1
+            partidos.append({
+                "torneo_id": torneo_id,
+                "jugador1_id": perdedores[0],
+                "jugador2_id": perdedores[1],
+                "orden": orden,
+                "jornada": None,
+                "ronda": ronda + 1,
+                "es_pase_libre": False,
+                "es_desempate": False,
+                "es_tercer_puesto": True,
+                "ganador_id": None,
+                "estado": "pendiente",
+            })
+
     for i in range(0, len(ganadores), 2):
         orden += 1
         partidos.append({
@@ -267,10 +293,19 @@ def _avanzar_bracket(torneo_id, ronda):
             "ronda": ronda + 1,
             "es_pase_libre": False,
             "es_desempate": False,
+            "es_tercer_puesto": False,
             "ganador_id": None,
             "estado": "pendiente",
         })
     partido_repository.crear_muchos(partidos, con_ronda=True)
+
+
+def _perdedor_de(partido):
+    """Quién perdió. Un pase libre no tiene perdedor: no se jugó."""
+    if partido.es_pase_libre or partido.ganador_id is None:
+        return None
+    return (partido.jugador2_id if partido.ganador_id == partido.jugador1_id
+            else partido.jugador1_id)
 
 
 def _generar_rey_de_la_cancha(torneo_id, jugadores_ids, vidas_iniciales):
@@ -293,6 +328,7 @@ def _generar_rey_de_la_cancha(torneo_id, jugadores_ids, vidas_iniciales):
         "ronda": None,
         "es_pase_libre": False,
             "es_desempate": False,
+            "es_tercer_puesto": False,
         "ganador_id": None,
         "estado": "pendiente",
     }], con_ronda=True)
@@ -350,6 +386,7 @@ def _avanzar_cola(partido, ganador_id):
         "ronda": None,
         "es_pase_libre": False,
             "es_desempate": False,
+            "es_tercer_puesto": False,
         "ganador_id": None,
         "estado": "pendiente",
     }], con_ronda=True)
@@ -398,6 +435,7 @@ def _generar_grupos(torneo_id, jugadores_ids, cantidad_grupos):
                     "ronda": None,
                     "es_pase_libre": False,
             "es_desempate": False,
+            "es_tercer_puesto": False,
                     "ganador_id": None,
                     "estado": "pendiente",
                 })
@@ -540,6 +578,7 @@ def _sembrar_cuadro(torneo):
             "orden": orden, "jornada": None, "ronda": 1,
             "es_pase_libre": es_pase_libre,
             "es_desempate": False,
+            "es_tercer_puesto": False,
             "ganador_id": jugador1 if es_pase_libre else None,
             "estado": "finalizado" if es_pase_libre else "pendiente",
         })
@@ -701,6 +740,7 @@ def resembrar(torneo_id, jugadores_en_orden):
             "orden": orden, "jornada": None, "ronda": 1,
             "es_pase_libre": es_pase_libre,
             "es_desempate": False,
+            "es_tercer_puesto": False,
             "ganador_id": jugador1 if es_pase_libre else None,
             "estado": "finalizado" if es_pase_libre else "pendiente",
         })
@@ -734,6 +774,7 @@ def _generar_desempate(torneo_id, empatados, es_repechaje=False):
             "torneo_id": torneo_id, "jugador1_id": jugador1, "jugador2_id": jugador2,
             "orden": orden, "jornada": None, "ronda": None,
             "es_pase_libre": False, "es_desempate": True,
+            "es_tercer_puesto": False,
             "ganador_id": None, "estado": "pendiente",
         })
     partido_repository.crear_muchos(partidos, con_ronda=True)

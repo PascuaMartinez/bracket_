@@ -114,11 +114,14 @@ def _tabla_eliminacion(torneo_id, participantes=None, partidos=None):
     Ordena por hasta dónde llegó cada uno en el cuadro.
 
     El puesto sale de en qué ronda quedó afuera: el campeón primero, el
-    finalista segundo, los que perdieron en semis comparten el tercer
-    puesto, y así. Los que cayeron en la misma instancia comparten puesto
-    porque el cuadro no los enfrentó entre sí -- decidir cuál de los dos
-    semifinalistas eliminados fue "mejor" sería inventar una comparación
-    que el torneo nunca hizo.
+    finalista segundo, y así. Los que cayeron en la misma instancia
+    comparten puesto porque el cuadro no los enfrentó entre sí -- decidir
+    cuál de los dos eliminados en cuartos fue "mejor" sería inventar una
+    comparación que el torneo nunca hizo.
+
+    La excepción son los semifinalistas: ellos SÍ se enfrentaron, en el
+    partido por el tercer puesto, así que ahí hay un tercero y un cuarto
+    de verdad.
     """
     if participantes is None:
         participantes = torneo_repository.obtener_participantes(torneo_id)
@@ -159,24 +162,78 @@ def _tabla_eliminacion(torneo_id, participantes=None, partidos=None):
             filas[perdedor_id]["pj"] += 1
             filas[perdedor_id]["pp"] += 1
 
+    # El puesto sale de hasta dónde llegó cada uno, con dos excepciones
+    # donde el cuadro SÍ los enfrentó y por lo tanto los separa: la final
+    # (campeón y subcampeón llegan a la misma ronda) y el partido por el
+    # tercer puesto.
+    campeon_id = _ganador_del_partido(partidos, tercer_puesto=False)
+    tercero_id = _ganador_del_partido(partidos, tercer_puesto=True)
+    cuarto_id = _perdedor_del_partido(partidos, tercer_puesto=True)
+
     ordenadas = sorted(filas.values(), key=lambda f: (-f["ronda_alcanzada"], -f["pg"]))
 
     for fila in ordenadas:
         fila["puntos"] = fila["pg"]
         fila["win_rate"] = round(fila["pg"] / fila["pj"], 3) if fila["pj"] else 0
 
-    # El puesto se agrupa por ronda alcanzada, no por victorias: los dos
-    # semifinalistas eliminados comparten puesto aunque uno haya ganado
-    # más partidos antes de llegar ahí.
+    _asignar_puestos_del_cuadro(ordenadas, campeon_id, tercero_id, cuarto_id)
+    ordenadas.sort(key=lambda f: (f["puesto"], f["nombre"]))
+    return ordenadas
+
+
+def _asignar_puestos_del_cuadro(filas, campeon_id, tercero_id, cuarto_id):
+    """
+    Numera los puestos agrupando por ronda alcanzada.
+
+    Los que cayeron en la misma instancia comparten puesto: el cuadro no
+    los enfrentó entre sí, así que ordenarlos sería inventar una
+    comparación que nunca se hizo. Las excepciones son quienes sí jugaron
+    un partido definitorio entre ellos.
+    """
+    definidos = {campeon_id, tercero_id, cuarto_id} - {None}
+
     puesto = 0
     ronda_anterior = None
-    for fila in ordenadas:
-        if fila["ronda_alcanzada"] != ronda_anterior:
+    anterior_estaba_definido = False
+
+    for fila in filas:
+        jugador_id = fila["jugador_id"]
+        cambio_de_ronda = fila["ronda_alcanzada"] != ronda_anterior
+
+        # Se avanza de puesto al cambiar de instancia, al llegar a alguien
+        # con lugar propio, o justo después de uno de ellos.
+        if cambio_de_ronda or jugador_id in definidos or anterior_estaba_definido:
             puesto += 1
             ronda_anterior = fila["ronda_alcanzada"]
-        fila["puesto"] = puesto
 
-    return ordenadas
+        fila["puesto"] = puesto
+        anterior_estaba_definido = jugador_id in definidos
+
+
+def _ganador_del_partido(partidos, tercer_puesto):
+    """El ganador del último partido del cuadro, o del que definió el
+    tercer puesto."""
+    candidatos = [
+        p for p in partidos
+        if p.ronda and p.estado == "finalizado" and p.ganador_id
+        and bool(getattr(p, "es_tercer_puesto", False)) == tercer_puesto
+    ]
+    if not candidatos:
+        return None
+    return max(candidatos, key=lambda p: (p.ronda, p.orden or 0)).ganador_id
+
+
+def _perdedor_del_partido(partidos, tercer_puesto):
+    candidatos = [
+        p for p in partidos
+        if p.ronda and p.estado == "finalizado" and p.ganador_id
+        and bool(getattr(p, "es_tercer_puesto", False)) == tercer_puesto
+    ]
+    if not candidatos:
+        return None
+    partido = max(candidatos, key=lambda p: (p.ronda, p.orden or 0))
+    return (partido.jugador2_id if partido.ganador_id == partido.jugador1_id
+            else partido.jugador1_id)
 
 
 def _tabla_rey_de_la_cancha(torneo_id, partidos=None):

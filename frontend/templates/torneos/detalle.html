@@ -47,7 +47,7 @@
     <tr class="{{ 'fila-clasificado' if fila.clasificado }}{{ ' fila-sin-resolver' if fila.sin_resolver }}">
       <td class="dato">{{ fila.puesto }}</td>
       <td>
-        {{ fila.nombre }}
+        {{ fila | emoji_puesto(torneo.modo) }} {{ fila.nombre }}
         {% if fila.clasificado %}<span class="marca-clasificado">clasificó</span>{% endif %}
         {# Sin resolver: la fase terminó pero hay un empate en el corte y
            el sistema no lo decide solo. #}
@@ -133,7 +133,7 @@
     {% for fila in tabla %}
     <tr>
       <td class="dato">{{ fila.puesto }}</td>
-      <td>{{ fila.nombre }}</td>
+      <td>{{ fila | emoji_puesto(torneo.modo) }} {{ fila.nombre }}</td>
       <td class="dato">{{ fila.pj }}</td>
       <td class="dato">{{ fila.pg }}</td>
       <td class="dato">{{ fila.pp }}</td>

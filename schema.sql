@@ -121,6 +121,11 @@ CREATE TABLE partido (
     -- contarlo le daría a esos jugadores partidos que el torneo no tenía.
     es_desempate BOOLEAN NOT NULL DEFAULT FALSE,
 
+    -- El partido por el tercer puesto. Se distingue de la final aunque
+    -- comparta ronda: sin esto no habría forma de saber cuál de los dos
+    -- define el campeón.
+    es_tercer_puesto BOOLEAN NOT NULL DEFAULT FALSE,
+
     estado ENUM('pendiente', 'en_curso', 'finalizado', 'pospuesto') DEFAULT 'pendiente',
     fecha_jugado DATETIME NULL,
 

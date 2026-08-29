@@ -56,6 +56,41 @@ def create_app():
             return None
         return f"{Config.API_BASE_URL}/static/{ruta}"
 
+    @app.template_filter("emoji_puesto")
+    def emoji_puesto(fila, modo=None):
+        """
+        El reconocimiento que le corresponde a un puesto.
+
+        El podio es igual en todos los formatos. Debajo de eso el criterio
+        cambia porque el quinto puesto significa cosas distintas: en una
+        tabla es el quinto de la lista, y en un cuadro es alguien que cayó
+        en cuartos, o sea que estuvo entre los ocho mejores.
+
+        Por eso el 5 y el 8 nunca conviven: cada uno es el último escalón
+        reconocido en su tipo de formato. Debajo de ahí no hay
+        reconocimiento en ninguno de los dos.
+        """
+        puesto = fila.get("puesto") if isinstance(fila, dict) else fila
+        if not puesto:
+            return ""
+
+        if puesto == 1:
+            return "🥇"
+        if puesto == 2:
+            return "🥈"
+        if puesto == 3:
+            return "🥉"
+        if puesto == 4:
+            return "4️⃣"
+
+        # En los formatos con cuadro, quedar quinto es haber caído en
+        # cuartos: se reconoce por estar entre los ocho mejores.
+        con_cuadro = modo in ("eliminacion", "grupos_eliminacion")
+        if puesto == 5:
+            return "8️⃣" if con_cuadro else "5️⃣"
+
+        return ""
+
     @app.template_filter("nombre_formato")
     def nombre_formato(valor):
         return NOMBRES_DE_FORMATO.get(valor, (valor or "").replace("_", " "))

@@ -6,8 +6,9 @@ from unittest.mock import patch
 from services import tabla_historica_service as historica
 
 
-def torneo(id, nombre, fecha, estado="finalizado"):
-    return SimpleNamespace(id=id, nombre=nombre, fecha=fecha, estado=estado)
+def torneo(id, nombre, fecha, estado="finalizado", modo="todos_contra_todos"):
+    return SimpleNamespace(id=id, nombre=nombre, fecha=fecha, estado=estado,
+                           modo=modo)
 
 
 def fila(jugador_id, nombre, puesto, pj=0, pg=0, pp=0):
