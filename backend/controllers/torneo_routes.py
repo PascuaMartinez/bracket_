@@ -76,36 +76,6 @@ def desempeno(torneo_id):
     return jsonify(grupos_consulta_service.desempeno_de(torneo_id, ids)), 200
 
 
-@torneo_bp.route("/<int:torneo_id>/cuadro-pendiente", methods=["GET"])
-def cuadro_pendiente(torneo_id):
-    """Si la fase de grupos terminó y falta armar el cuadro, con los
-    clasificados en el orden que propondría el sistema."""
-    from services import partido_service
-
-    if not partido_service.cuadro_pendiente(torneo_id):
-        return jsonify({"pendiente": False, "clasificados": []}), 200
-
-    return jsonify({
-        "pendiente": True,
-        "clasificados": partido_service.clasificados_para_el_cuadro(torneo_id),
-    }), 200
-
-
-@torneo_bp.route("/<int:torneo_id>/sembrar-cuadro", methods=["POST"])
-def sembrar_cuadro(torneo_id):
-    """Arma el cuadro, con el orden recibido o con la siembra automática."""
-    from services import partido_service
-
-    datos = request.get_json(silent=True) or {}
-    try:
-        partido_service.sembrar_cuadro_manual(torneo_id, datos.get("jugadores_ids"))
-        return "", 204
-    except partido_service.ResultadoInvalidoError as e:
-        return jsonify({"error": str(e)}), 400
-    except partido_service.PartidoNoEncontradoError as e:
-        return jsonify({"error": str(e)}), 404
-
-
 @torneo_bp.route("/<int:torneo_id>/repetir-desempate", methods=["POST"])
 def repetir_desempate(torneo_id):
     """Vuelve a jugar un desempate que no resolvió."""

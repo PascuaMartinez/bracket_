@@ -72,10 +72,41 @@
     {% endfor %}
   </fieldset>
 
+  {# El armado manual solo aparece en los formatos donde el orden cambia
+     algo. En todos contra todos juegan todos contra todos: no hay nada
+     que ordenar. #}
+  <div class="campo" data-formato="eliminacion rey_de_la_cancha grupos_eliminacion" hidden>
+    <label class="opcion">
+      <input type="checkbox" id="armado_manual" name="armado_manual" value="si">
+      <span id="etiqueta-armado-manual">Armar a mano</span>
+    </label>
+    <p class="ayuda" id="ayuda-armado-manual"></p>
+  </div>
+
+  {# Los controles del armado manual: se llenan con los jugadores
+     tildados y solo se muestran si se pidió armar a mano. #}
+  <div id="panel-manual" hidden>
+    <div id="panel-orden" hidden>
+      <p class="ayuda" id="ayuda-orden"></p>
+      <ol id="lista-orden-nuevo" class="lista-ordenable panel"></ol>
+      <div id="vista-cruces" class="panel vista-cruces" hidden></div>
+    </div>
+
+    <div id="panel-grupos" hidden>
+      <p class="ayuda">
+        Asignale un grupo a cada jugador. Tienen que quedar parejos: a lo
+        sumo uno de diferencia entre el más grande y el más chico.
+      </p>
+      <div id="lista-grupos" class="panel"></div>
+      <p class="aviso-grupos" id="aviso-grupos"></p>
+    </div>
+  </div>
+
   <button type="submit" class="boton">Crear torneo</button>
 </form>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/formulario_torneo.js') }}"></script>
+<script src="{{ url_for('static', filename='js/armado_manual.js') }}"></script>
 {% endblock %}

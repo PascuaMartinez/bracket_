@@ -74,9 +74,6 @@ def detalle(torneo_id):
     # llamada que casi siempre viene vacía.
     if datos["torneo"]["modo"] == "grupos_eliminacion":
         datos["grupos"] = torneos.grupos(torneo_id)
-        # Si la fase de grupos terminó, hay que preguntar cómo sembrar el
-        # cuadro antes de que empiece la eliminación.
-        datos["cuadro"] = torneos.cuadro_pendiente(torneo_id)
 
         # Si quedó algo sin resolver, se trae cómo le fue a cada uno en su
         # grupo: son de grupos distintos y pueden haber llegado ahí de
@@ -362,28 +359,3 @@ def _aplicar_armado_manual(datos):
     # afuera sin que se haya decidido.
     if sorted(orden) == sorted(datos["jugadores_ids"]):
         datos["jugadores_ids"] = orden
-
-
-@torneo_bp.route("/<int:torneo_id>/sembrar-cuadro", methods=["GET", "POST"])
-@auth.requiere_sesion
-def sembrar_cuadro(torneo_id):
-    """
-    Elegir cómo armar el cuadro cuando termina la fase de grupos.
-
-    Se pregunta acá y no al crear el torneo: la fase de grupos es larga,
-    y al empezarla todavía no se sabe quiénes van a clasificar. El momento
-    de decidir los cruces es cuando ya se conocen.
-    """
-    if request.method == "POST":
-        orden = [int(j) for j in request.form.getlist("jugadores_ids")]
-        # Sin orden explícito se usa la siembra automática.
-        torneos.sembrar_cuadro(
-            torneo_id, orden if request.form.get("manual") == "si" else None
-        )
-        return redirect(url_for("torneo.detalle", torneo_id=torneo_id))
-
-    return render_template(
-        "torneos/sembrar_cuadro.html",
-        torneo=torneos.obtener(torneo_id),
-        clasificados=torneos.cuadro_pendiente(torneo_id)["clasificados"],
-    )

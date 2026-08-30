@@ -1015,20 +1015,3 @@ main { padding: 36px 0 64px; }
   font-size: 13px;
   margin: 4px 0;
 }
-
-/* Aviso de que el cuadro está por armarse: destacado porque es una
-   acción pendiente que traba el torneo, no un dato más. */
-.aviso-cuadro {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  border: 1px solid var(--pine);
-  border-radius: 6px;
-  background: var(--pine-soft);
-  padding: 16px 20px;
-  margin-bottom: 24px;
-}
-
-.aviso-cuadro p { margin: 0; }

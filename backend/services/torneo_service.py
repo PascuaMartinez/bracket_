@@ -46,7 +46,7 @@ def obtener_participantes(torneo_id):
 
 def crear_torneo(nombre, modo, fecha, jugadores_ids, descripcion=None, lugar=None,
                  vidas_iniciales=None, cantidad_grupos=None,
-                 cupos_eliminacion=None):
+                 cupos_eliminacion=None, grupos_manuales=None):
     if not nombre or not nombre.strip():
         raise TorneoInvalidoError("El nombre del torneo es obligatorio")
 
@@ -87,6 +87,9 @@ def crear_torneo(nombre, modo, fecha, jugadores_ids, descripcion=None, lugar=Non
         if cantidad_grupos > len(jugadores_ids):
             raise TorneoInvalidoError("Hay más grupos que jugadores")
 
+        if grupos_manuales is not None:
+            _validar_grupos_manuales(grupos_manuales, jugadores_ids, cantidad_grupos)
+
     torneo_id = torneo_repository.crear(
         nombre.strip(), modo, fecha,
         (descripcion or "").strip() or None,
@@ -103,7 +106,8 @@ def crear_torneo(nombre, modo, fecha, jugadores_ids, descripcion=None, lugar=Non
     # de módulo se trabarían entre sí.
     from services import partido_service
     partido_service.generar_fixture(
-        torneo_id, modo, jugadores_ids, vidas_iniciales, cantidad_grupos
+        torneo_id, modo, jugadores_ids, vidas_iniciales, cantidad_grupos,
+        grupos_manuales,
     )
 
     return obtener_torneo(torneo_id)
@@ -173,3 +177,35 @@ def torneo_en_curso():
         "partidos_totales": len(partidos),
         "partidos_jugados": len(jugados),
     }
+
+
+def _validar_grupos_manuales(grupos, jugadores_ids, cantidad_grupos):
+    """
+    Revisa que un armado a mano sea jugable.
+
+    Los grupos tienen que quedar parejos -- a lo sumo uno de diferencia --
+    porque el reparto de cupos y el repechaje asumen esa paridad. Con
+    seis en un grupo y dos en otro, clasificar sería mucho más difícil en
+    uno que en otro, y el sistema repartiría los cupos como si fueran
+    situaciones equivalentes.
+    """
+    if len(grupos) != cantidad_grupos:
+        raise TorneoInvalidoError(
+            f"Se esperaban {cantidad_grupos} grupos y llegaron {len(grupos)}"
+        )
+
+    asignados = [j for grupo in grupos for j in grupo]
+    if sorted(asignados) != sorted(jugadores_ids):
+        raise TorneoInvalidoError(
+            "Todos los jugadores tienen que estar en exactamente un grupo"
+        )
+
+    tamanos = [len(g) for g in grupos]
+    if min(tamanos) == 0:
+        raise TorneoInvalidoError("Ningún grupo puede quedar vacío")
+
+    if max(tamanos) - min(tamanos) > 1:
+        raise TorneoInvalidoError(
+            f"Los grupos tienen que quedar parejos: hay uno de {max(tamanos)} "
+            f"y otro de {min(tamanos)}"
+        )
