@@ -59,9 +59,11 @@
       <td>
         {{ fila | emoji_puesto(torneo.modo) }} {{ fila.nombre }}
         {% if fila.clasificado %}<span class="marca-clasificado">clasificó</span>{% endif %}
-        {# Sin resolver: la fase terminó pero hay un empate en el corte y
-           el sistema no lo decide solo. #}
-        {% if fila.sin_resolver and hay_sesion() %}
+        {# Forzar a mano es el último recurso: solo se ofrece cuando el
+           desempate YA se jugó y no alcanzó para separarlos. Mientras el
+           desempate está pendiente, lo que corresponde es ir a jugarlo,
+           no saltearlo desde acá. #}
+        {% if fila.puede_forzarse and hay_sesion() %}
         <form method="post" class="linea-resolver"
               action="{{ url_for('torneo.resolver_empate', torneo_id=torneo.id, grupo_id=grupo.id) }}">
           <input type="hidden" name="jugador_id" value="{{ fila.jugador_id }}">
@@ -69,6 +71,8 @@
           <button type="submit" name="clasifica" value="si" class="enlace-boton">Pasa</button>
           <button type="submit" name="clasifica" value="no" class="enlace-peligro">No pasa</button>
         </form>
+        {% elif fila.sin_resolver and not fila.puede_forzarse %}
+        <span class="marca-sin-resolver">esperando el desempate</span>
         {% elif fila.sin_resolver %}
         <span class="marca-sin-resolver">empate sin resolver</span>
         {% endif %}
@@ -82,15 +86,15 @@
   </tbody>
 </table>
 </div>
-{% set sin_resolver = grupo.tabla | selectattr('sin_resolver') | list %}
-{% if sin_resolver and hay_sesion() %}
+{% set forzables = grupo.tabla | selectattr('puede_forzarse') | list %}
+{% if forzables and hay_sesion() %}
 {# Cuando el desempate tampoco separó -- en un triangular cada uno puede
    ganar uno -- hay dos salidas: decidirlo a mano arriba, o volver a
    jugarlo. La segunda puede volver a empatar, pero es una decisión
    legítima: a veces el grupo prefiere resolverlo en la cancha. #}
 <form method="post" class="formulario-suelto"
       action="{{ url_for('torneo.repetir_desempate', torneo_id=torneo.id) }}">
-  {% for fila in sin_resolver %}
+  {% for fila in forzables %}
   <input type="hidden" name="jugadores_ids" value="{{ fila.jugador_id }}">
   {% endfor %}
   <button type="submit" class="boton-secundario">Volver a jugar el desempate</button>

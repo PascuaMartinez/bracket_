@@ -6,11 +6,13 @@ torneo y el otro mientras se juega. Mezclarlos haría que cualquier
 pantalla que solo quiere mostrar la tabla arrastre también la lógica de
 reparto.
 """
-from repositories import grupo_repository
+from repositories import grupo_repository, partido_repository
 from services import tabla_service
 
 
 def obtener_grupos(torneo_id):
+    partidos = partido_repository.obtener_por_torneo(torneo_id)
+
     grupos = []
     for grupo in grupo_repository.obtener_por_torneo(torneo_id):
         tabla = tabla_service.calcular_tabla_de_grupo(torneo_id, grupo["id"])
@@ -22,12 +24,30 @@ def obtener_grupos(torneo_id):
             j["jugador_id"]: j["clasificado"]
             for j in grupo_repository.obtener_jugadores(grupo["id"])
         }
+
+        jugadores_del_grupo = set(clasificados.keys())
+        desempates_del_grupo = [
+            p for p in partidos
+            if p.es_desempate
+            and p.jugador1_id in jugadores_del_grupo
+            and p.jugador2_id in jugadores_del_grupo
+        ]
+        # Si hay un desempate sin terminar, todavía se está jugando: no
+        # es el momento de ofrecer forzar un clasificado a mano. Esa
+        # opción es para cuando el desempate YA se jugó y no alcanzó
+        # -- el triangular perfecto -- no para saltearse la cancha.
+        desempate_pendiente = any(p.estado != "finalizado" for p in desempates_del_grupo)
+
         for fila in tabla:
             # None significa "sin resolver": la fase terminó pero quedó un
             # empate en el corte esperando una decisión. Es distinto de
             # False, que es "no clasificó".
             fila["clasificado"] = clasificados.get(fila["jugador_id"])
             fila["sin_resolver"] = fila["clasificado"] is None
+            # Se ofrece forzar solo cuando no hay nada pendiente de
+            # jugarse: si el desempate está en curso, la acción correcta
+            # es ir a jugarlo, no forzarlo desde el listado.
+            fila["puede_forzarse"] = fila["sin_resolver"] and not desempate_pendiente
 
         grupos.append({"id": grupo["id"], "nombre": grupo["nombre"], "tabla": tabla})
     return grupos
