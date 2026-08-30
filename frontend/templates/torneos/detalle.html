@@ -30,6 +30,16 @@
   </div>
 </div>
 
+{% if cuadro and cuadro.pendiente and hay_sesion() %}
+<div class="aviso-cuadro">
+  <p><strong>Terminó la fase de grupos.</strong>
+     Clasificaron {{ cuadro.clasificados | length }} jugadores.</p>
+  <a class="boton" href="{{ url_for('torneo.sembrar_cuadro', torneo_id=torneo.id) }}">
+    Armar el cuadro
+  </a>
+</div>
+{% endif %}
+
 {% if grupos %}
 <h2 class="titulo-seccion">Fase de grupos</h2>
 {% for grupo in grupos %}

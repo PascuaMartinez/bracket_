@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Armar el cuadro · Bracket{% endblock %}
+
+{% block content %}
+<p class="dato-tenue">{{ torneo.nombre }}</p>
+<h1 class="titulo-pagina">Terminó la fase de grupos</h1>
+<p class="subtitulo">
+  Clasificaron {{ clasificados | length }} jugadores. Falta armar el cuadro
+  de eliminación.
+</p>
+
+<form method="post" class="panel">
+  <p class="ayuda">
+    El armado automático intercala los grupos: primero de A contra último
+    de B, para que los que ganaron su grupo no se crucen de entrada.
+  </p>
+
+  <label class="opcion">
+    <input type="checkbox" id="armar_manual" name="manual" value="si"
+           onchange="document.getElementById('orden-cuadro').hidden = !this.checked">
+    Armar los cruces a mano
+  </label>
+
+  {# La lista arranca con el orden que propondría el automático: se
+     ajusta desde ahí en vez de empezar de una lista sin criterio. #}
+  <div id="orden-cuadro" hidden>
+    <p class="ayuda">
+      El orden define los cruces: el primero contra el último, el segundo
+      contra el anteúltimo.
+    </p>
+    <ol id="lista-orden" class="lista-ordenable">
+      {% for jugador in clasificados %}
+      <li draggable="true" class="fila-ordenable">
+        <span class="posicion">{{ loop.index }}</span>
+        <span class="nombre-ordenable">
+          {{ jugador.nombre }}
+          {% if jugador.grupo %}<span class="tenue">· {{ jugador.grupo }}</span>{% endif %}
+        </span>
+        <span class="botones-mover">
+          <button type="button" class="enlace-boton" data-mover="arriba"
+                  aria-label="Subir a {{ jugador.nombre }}">↑</button>
+          <button type="button" class="enlace-boton" data-mover="abajo"
+                  aria-label="Bajar a {{ jugador.nombre }}">↓</button>
+        </span>
+        <input type="hidden" name="jugadores_ids" value="{{ jugador.id }}">
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+
+  <button type="submit" class="boton">Armar el cuadro</button>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/reordenar.js') }}"></script>
+{% endblock %}

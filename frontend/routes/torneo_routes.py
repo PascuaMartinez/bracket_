@@ -51,6 +51,9 @@ def nuevo():
         datos["cantidad_grupos"] = int(request.form.get("cantidad_grupos") or 0)
         datos["cupos_eliminacion"] = int(request.form.get("cupos_eliminacion") or 0)
 
+    if request.form.get("armado_manual") == "si":
+        _aplicar_armado_manual(datos)
+
     try:
         creado = torneos.crear(datos)
     except api.ErrorDeApi as e:
@@ -71,6 +74,9 @@ def detalle(torneo_id):
     # llamada que casi siempre viene vacía.
     if datos["torneo"]["modo"] == "grupos_eliminacion":
         datos["grupos"] = torneos.grupos(torneo_id)
+        # Si la fase de grupos terminó, hay que preguntar cómo sembrar el
+        # cuadro antes de que empiece la eliminación.
+        datos["cuadro"] = torneos.cuadro_pendiente(torneo_id)
 
         # Si quedó algo sin resolver, se trae cómo le fue a cada uno en su
         # grupo: son de grupos distintos y pueden haber llegado ahí de
@@ -328,3 +334,56 @@ def descartar_en_curso():
     """
     torneos.eliminar(int(request.form["torneo_id"]))
     return redirect(url_for("torneo.nuevo", confirmado="si"))
+
+
+def _aplicar_armado_manual(datos):
+    """
+    Traduce lo que armó a mano quien crea el torneo.
+
+    En eliminación y rey de la cancha el armado es un orden: la lista de
+    jugadores ya viene ordenada como se quiere, y los formatos la usan
+    tal cual -- el primero contra el último en el cuadro, los dos
+    primeros arrancando la cola.
+
+    En grupos es una asignación: cada jugador dice a qué grupo va, y hay
+    que reconstruir las listas a partir de eso.
+    """
+    if datos["modo"] == "grupos_eliminacion":
+        grupos = [[] for _ in range(datos.get("cantidad_grupos") or 0)]
+        for jugador_id in datos["jugadores_ids"]:
+            indice = request.form.get(f"grupo_de_{jugador_id}")
+            if indice is not None and indice.isdigit() and int(indice) < len(grupos):
+                grupos[int(indice)].append(jugador_id)
+        datos["grupos_manuales"] = grupos
+        return
+
+    orden = [int(j) for j in request.form.getlist("orden_jugadores")]
+    # Solo se usa si están todos: un orden incompleto dejaría a alguien
+    # afuera sin que se haya decidido.
+    if sorted(orden) == sorted(datos["jugadores_ids"]):
+        datos["jugadores_ids"] = orden
+
+
+@torneo_bp.route("/<int:torneo_id>/sembrar-cuadro", methods=["GET", "POST"])
+@auth.requiere_sesion
+def sembrar_cuadro(torneo_id):
+    """
+    Elegir cómo armar el cuadro cuando termina la fase de grupos.
+
+    Se pregunta acá y no al crear el torneo: la fase de grupos es larga,
+    y al empezarla todavía no se sabe quiénes van a clasificar. El momento
+    de decidir los cruces es cuando ya se conocen.
+    """
+    if request.method == "POST":
+        orden = [int(j) for j in request.form.getlist("jugadores_ids")]
+        # Sin orden explícito se usa la siembra automática.
+        torneos.sembrar_cuadro(
+            torneo_id, orden if request.form.get("manual") == "si" else None
+        )
+        return redirect(url_for("torneo.detalle", torneo_id=torneo_id))
+
+    return render_template(
+        "torneos/sembrar_cuadro.html",
+        torneo=torneos.obtener(torneo_id),
+        clasificados=torneos.cuadro_pendiente(torneo_id)["clasificados"],
+    )

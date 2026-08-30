@@ -982,3 +982,53 @@ main { padding: 36px 0 64px; }
 /* El botón de riesgo dentro de un diálogo no lleva el margen superior
    que usa cuando va suelto al pie de una pantalla. */
 .dialogo .boton-peligro { margin-top: 0; }
+
+/* --- Armado manual --- */
+
+.fila-grupo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.fila-grupo:last-child { border-bottom: none; }
+.fila-grupo select { font-size: 14px; padding: 4px 8px; }
+
+/* El aviso de grupos desparejos va en ámbar y no en rojo: todavía no es
+   un error, es algo a corregir antes de crear. */
+.aviso-grupos {
+  color: var(--amber);
+  font-size: 13px;
+  margin: 8px 0 0;
+  min-height: 18px;
+}
+
+/* Los cruces que salen del orden elegido: se muestran para no tener que
+   imaginarlos, que es lo que hace difícil ordenar un cuadro. */
+.vista-cruces { padding: 12px 16px; margin-bottom: 20px; }
+
+.cruce {
+  font-family: var(--font-dato);
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+/* Aviso de que el cuadro está por armarse: destacado porque es una
+   acción pendiente que traba el torneo, no un dato más. */
+.aviso-cuadro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--pine);
+  border-radius: 6px;
+  background: var(--pine-soft);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.aviso-cuadro p { margin: 0; }

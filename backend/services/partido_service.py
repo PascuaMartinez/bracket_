@@ -19,7 +19,7 @@ class ResultadoInvalidoError(Exception):
 
 
 def generar_fixture(torneo_id, modo, jugadores_ids, vidas_iniciales=None,
-                    cantidad_grupos=None):
+                    cantidad_grupos=None, grupos_manuales=None):
     """
     Arma los partidos iniciales del torneo y lo pasa a 'en curso'.
 
@@ -39,7 +39,8 @@ def generar_fixture(torneo_id, modo, jugadores_ids, vidas_iniciales=None,
     if modo == "rey_de_la_cancha":
         return _generar_rey_de_la_cancha(torneo_id, jugadores_ids, vidas_iniciales)
     if modo == "grupos_eliminacion":
-        return _generar_grupos(torneo_id, jugadores_ids, cantidad_grupos)
+        return _generar_grupos(torneo_id, jugadores_ids, cantidad_grupos,
+                               grupos_manuales)
     return _generar_todos_contra_todos(torneo_id, jugadores_ids)
 
 
@@ -404,7 +405,8 @@ def _proximo_en_la_cola(estado, en_cancha_id):
     return min(esperando, key=lambda j: j["posicion_cola"] or 0)
 
 
-def _generar_grupos(torneo_id, jugadores_ids, cantidad_grupos):
+def _generar_grupos(torneo_id, jugadores_ids, cantidad_grupos,
+                    grupos_manuales=None):
     """
     Arma los grupos y todos sus partidos.
 
@@ -412,7 +414,12 @@ def _generar_grupos(torneo_id, jugadores_ids, cantidad_grupos):
     de la fase de grupos sale completo. El cuadro de eliminación no: quién
     lo juega depende de quién clasifique.
     """
-    repartidos = grupos_service.repartir_en_grupos(jugadores_ids, cantidad_grupos)
+    # Con grupos armados a mano se respetan tal cual. El reparto
+    # automático equilibra por nivel, que es lo correcto en general, pero
+    # quien organiza puede tener motivos que el sistema no conoce.
+    repartidos = grupos_manuales or grupos_service.repartir_en_grupos(
+        jugadores_ids, cantidad_grupos
+    )
 
     partidos = []
     orden = 1
@@ -521,7 +528,13 @@ def _cerrar_fase_de_grupos(torneo):
         _generar_repechaje(torneo, grupos, cupos, lugares_de_repechaje)
         return
 
-    _sembrar_cuadro(torneo)
+    # El cuadro NO se siembra solo. La fase de grupos es larga y quien
+    # organiza puede querer acomodar los cruces antes de arrancar la
+    # eliminación: sembrarlo automáticamente lo obligaría a deshacer algo
+    # que acaba de generarse.
+    #
+    # Queda esperando: la pantalla del torneo ofrece armarlo automático o
+    # a mano.
 
 
 def _intercalar(listas):
@@ -558,7 +571,11 @@ def resolver_empate(torneo_id, grupo_id, jugador_id, clasifica, observacion=None
 
 
 def _sembrar_cuadro(torneo):
-    """Arma la primera ronda del cuadro con los que clasificaron."""
+    """Arma la primera ronda del cuadro con los que clasificaron.
+
+    Se intercalan los grupos al sembrar: primero de A, primero de B,
+    segundo de A, segundo de B. Así los que ganaron su grupo quedan en
+    extremos opuestos y no se cruzan en la primera ronda."""
     clasificados_por_grupo = {}
     for fila in grupo_repository.obtener_clasificados(torneo.id):
         clasificados_por_grupo.setdefault(fila["grupo_id"], []).append(fila["jugador_id"])
@@ -567,6 +584,11 @@ def _sembrar_cuadro(torneo):
     if len(sembrados) < 2:
         return
 
+    _crear_primera_ronda(torneo, sembrados)
+
+
+def _crear_primera_ronda(torneo, sembrados):
+    """Crea los partidos de la primera ronda a partir de un orden dado."""
     cruces = bracket_service.sembrar_primera_ronda(sembrados)
     orden = partido_repository.obtener_max_orden(torneo.id)
     partidos = []
@@ -959,3 +981,87 @@ def _generar_repechaje(torneo, grupos, cupos, lugares):
         return
 
     _generar_desempate(torneo.id, candidatos, es_repechaje=True)
+
+
+def cuadro_pendiente(torneo_id):
+    """
+    Si la fase de grupos terminó y el cuadro todavía no se armó.
+
+    Es el momento en que hay que preguntar cómo sembrarlo. Se calcula en
+    vez de guardarse un estado aparte: los datos ya dicen todo lo que hace
+    falta -- hay clasificados y no hay partidos de cuadro -- y un estado
+    duplicado sería otra cosa que puede quedar desincronizada.
+    """
+    torneo = torneo_repository.obtener_por_id(torneo_id)
+    if torneo is None or torneo.modo != "grupos_eliminacion":
+        return False
+
+    if grupo_repository.hay_indecisos(torneo_id):
+        return False   # todavía falta resolver algún empate
+
+    clasificados = grupo_repository.obtener_clasificados(torneo_id)
+    if len(clasificados) < 2:
+        return False
+
+    hay_cuadro = any(p.ronda for p in partido_repository.obtener_por_torneo(torneo_id))
+    return not hay_cuadro
+
+
+def sembrar_cuadro_manual(torneo_id, jugadores_en_orden=None):
+    """
+    Arma el cuadro de eliminación, con el orden dado o con la siembra
+    automática.
+
+    Sin orden se intercalan los grupos -- primero de A, primero de B --
+    para que los que ganaron su grupo queden en extremos opuestos. Con
+    orden, se respeta tal cual.
+    """
+    torneo = torneo_repository.obtener_por_id(torneo_id)
+    if torneo is None:
+        raise PartidoNoEncontradoError(f"No existe el torneo {torneo_id}")
+
+    if not cuadro_pendiente(torneo_id):
+        raise ResultadoInvalidoError("El cuadro de este torneo ya está armado")
+
+    if not jugadores_en_orden:
+        _sembrar_cuadro(torneo)
+        return
+
+    clasificados = {f["jugador_id"] for f in grupo_repository.obtener_clasificados(torneo_id)}
+    if set(jugadores_en_orden) != clasificados:
+        raise ResultadoInvalidoError(
+            "El orden tiene que incluir exactamente a los clasificados"
+        )
+
+    _crear_primera_ronda(torneo, list(jugadores_en_orden))
+
+
+def clasificados_para_el_cuadro(torneo_id):
+    """
+    Quiénes clasificaron, en el orden en que los sembraría el sistema.
+
+    Es el punto de partida para reordenarlos: se muestra lo que haría el
+    automático y desde ahí se ajusta, en vez de arrancar de una lista sin
+    criterio.
+    """
+    from repositories import jugador_repository
+
+    nombres = {j.id: j.nombre
+               for j in jugador_repository.obtener_todos(incluir_ocultos=True)}
+    nombre_del_grupo = {g["id"]: g["nombre"]
+                        for g in grupo_repository.obtener_por_torneo(torneo_id)}
+
+    por_grupo = {}
+    grupo_de_cada_uno = {}
+    for fila in grupo_repository.obtener_clasificados(torneo_id):
+        por_grupo.setdefault(fila["grupo_id"], []).append(fila["jugador_id"])
+        grupo_de_cada_uno[fila["jugador_id"]] = fila["grupo_id"]
+
+    return [
+        {
+            "id": jugador_id,
+            "nombre": nombres.get(jugador_id, "?"),
+            "grupo": nombre_del_grupo.get(grupo_de_cada_uno.get(jugador_id), ""),
+        }
+        for jugador_id in _intercalar(list(por_grupo.values()))
+    ]

@@ -82,6 +82,16 @@ def en_curso():
     return api.get("/torneos/en-curso")
 
 
+def cuadro_pendiente(torneo_id):
+    """Si falta armar el cuadro, con los clasificados."""
+    return api.get(f"/torneos/{torneo_id}/cuadro-pendiente")
+
+
+def sembrar_cuadro(torneo_id, jugadores_ids=None):
+    return api.post(f"/torneos/{torneo_id}/sembrar-cuadro",
+                    {"jugadores_ids": jugadores_ids})
+
+
 def crear(datos):
     return api.post("/torneos", datos)
 
