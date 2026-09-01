@@ -57,7 +57,7 @@
     <tr class="{{ 'fila-clasificado' if fila.clasificado }}{{ ' fila-sin-resolver' if fila.sin_resolver }}">
       <td class="dato">{{ fila.puesto }}</td>
       <td>
-        {{ fila | emoji_puesto(torneo.modo) }} {{ fila.nombre }}
+        {{ fila.nombre }}
         {% if fila.clasificado %}<span class="marca-clasificado">clasificó</span>{% endif %}
         {# Forzar a mano es el último recurso: solo se ofrece cuando el
            desempate YA se jugó y no alcanzó para separarlos. Mientras el
@@ -147,7 +147,11 @@
     {% for fila in tabla %}
     <tr>
       <td class="dato">{{ fila.puesto }}</td>
-      <td>{{ fila | emoji_puesto(torneo.modo) }} {{ fila.nombre }}</td>
+      {# El emoji marca un puesto FINAL: mientras el torneo sigue en
+         curso, ese lugar puede cambiar con el próximo resultado, así que
+         mostrarlo antes de tiempo sería prometer algo que todavía no
+         pasó. #}
+      <td>{{ (fila | emoji_puesto(torneo.modo)) ~ ' ' if torneo.estado == 'finalizado' }}{{ fila.nombre }}</td>
       <td class="dato">{{ fila.pj }}</td>
       <td class="dato">{{ fila.pg }}</td>
       <td class="dato">{{ fila.pp }}</td>

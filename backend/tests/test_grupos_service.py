@@ -76,3 +76,37 @@ def test_nombre_de_grupo(indice, nombre):
 def test_mas_alla_de_la_z_usa_numeros():
     """Combinar letras (AA, AB) sería más confuso que numerarlos."""
     assert nombre_de_grupo(26) == "Grupo 27"
+
+
+def test_los_partidos_de_distintos_grupos_se_intercalan():
+    """Si se jugaran todos los partidos del Grupo A antes de arrancar el
+    Grupo B, ese grupo quedaría sin jugar nada hasta que el otro termine
+    entero. Los grupos tienen que avanzar en paralelo."""
+    from unittest.mock import patch
+
+    from services import partido_service as ps
+
+    capturados = []
+
+    def capturar(lista, con_ronda=False):
+        capturados.extend(lista)
+
+    ids_de_grupo = iter([1, 2])
+    with patch.object(ps.grupo_repository, "crear",
+                      side_effect=lambda t, n: next(ids_de_grupo)), \
+         patch.object(ps.grupo_repository, "asignar_jugadores"), \
+         patch.object(ps.partido_repository, "crear_muchos", side_effect=capturar), \
+         patch.object(ps.torneo_repository, "cambiar_estado"):
+        ps._generar_grupos(1, [1, 2, 3, 4, 5, 6, 7, 8], cantidad_grupos=2)
+
+    grupo_a = {1, 4, 5, 8}
+    grupo_b = {2, 3, 6, 7}
+
+    def grupo_de(partido):
+        return "A" if partido["jugador1_id"] in grupo_a else "B"
+
+    primeros_cuatro = [grupo_de(p) for p in capturados[:4]]
+    assert set(primeros_cuatro) == {"A", "B"}, (
+        "los primeros partidos generados deberían tocar a los dos grupos, "
+        "no agotar uno antes de empezar el otro"
+    )

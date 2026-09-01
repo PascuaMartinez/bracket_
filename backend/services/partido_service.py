@@ -421,16 +421,29 @@ def _generar_grupos(torneo_id, jugadores_ids, cantidad_grupos,
         jugadores_ids, cantidad_grupos
     )
 
-    partidos = []
-    orden = 1
+    grupo_ids = []
+    fixture_por_grupo = []
     for indice, jugadores_del_grupo in enumerate(repartidos):
         grupo_id = grupo_repository.crear(
             torneo_id, grupos_service.nombre_de_grupo(indice)
         )
         grupo_repository.asignar_jugadores(torneo_id, grupo_id, jugadores_del_grupo)
+        grupo_ids.append(grupo_id)
+        fixture_por_grupo.append(fixture_service.fixture_round_robin(jugadores_del_grupo))
 
-        for jornada in fixture_service.fixture_round_robin(jugadores_del_grupo):
-            for jugador1, jugador2 in jornada:
+    # Se intercala por jornada y no grupo por grupo: si se jugaran todos
+    # los partidos del Grupo A antes de arrancar el Grupo B, ese grupo
+    # quedaría sin jugar nada hasta que el otro termine entero. Con
+    # varios grupos a la vez, lo esperable es que avancen en paralelo --
+    # una jornada de cada uno, y así hasta que todos terminen.
+    partidos = []
+    orden = 1
+    cantidad_de_jornadas = max((len(f) for f in fixture_por_grupo), default=0)
+    for numero_de_jornada in range(cantidad_de_jornadas):
+        for fixture_del_grupo in fixture_por_grupo:
+            if numero_de_jornada >= len(fixture_del_grupo):
+                continue   # este grupo tiene menos jornadas que el más grande
+            for jugador1, jugador2 in fixture_del_grupo[numero_de_jornada]:
                 partidos.append({
                     "torneo_id": torneo_id,
                     "jugador1_id": jugador1,
