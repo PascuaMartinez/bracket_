@@ -26,6 +26,22 @@ def obtener_grupos(torneo_id):
         }
 
         jugadores_del_grupo = set(clasificados.keys())
+
+        # Los partidos de la fase de grupos propiamente dicha (no el
+        # cuadro, no un desempate): si queda alguno sin jugar, el grupo
+        # todavía se está disputando y "nadie tiene clasificado asignado
+        # todavía" no significa que haya un empate -- significa que
+        # todavía no se sabe. Sin este chequeo, un torneo recién creado
+        # mostraría a todo el grupo como "en disputa" desde el arranque.
+        partidos_de_fase = [
+            p for p in partidos
+            if p.ronda is None and not p.es_desempate
+            and p.jugador1_id in jugadores_del_grupo
+        ]
+        fase_terminada = bool(partidos_de_fase) and all(
+            p.estado == "finalizado" for p in partidos_de_fase
+        )
+
         desempates_del_grupo = [
             p for p in partidos
             if p.es_desempate
@@ -39,11 +55,12 @@ def obtener_grupos(torneo_id):
         desempate_pendiente = any(p.estado != "finalizado" for p in desempates_del_grupo)
 
         for fila in tabla:
-            # None significa "sin resolver": la fase terminó pero quedó un
-            # empate en el corte esperando una decisión. Es distinto de
-            # False, que es "no clasificó".
             fila["clasificado"] = clasificados.get(fila["jugador_id"])
-            fila["sin_resolver"] = fila["clasificado"] is None
+            # Sin resolver: la fase de grupos terminó y quedó un empate en
+            # el corte esperando una decisión. Mientras la fase siga en
+            # curso, nadie está "sin resolver" -- simplemente todavía no
+            # jugó lo suficiente.
+            fila["sin_resolver"] = fase_terminada and fila["clasificado"] is None
             # Se ofrece forzar solo cuando no hay nada pendiente de
             # jugarse: si el desempate está en curso, la acción correcta
             # es ir a jugarlo, no forzarlo desde el listado.
